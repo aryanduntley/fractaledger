@@ -180,7 +180,7 @@ describe('API', () => {
   let app;
   let token;
   
-  before(async () => {
+  beforeAll(async () => {
     // Start the API server with mock dependencies
     app = await startApiServer(
       mockConfig,

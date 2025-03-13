@@ -15,6 +15,33 @@ FractaLedger solves the challenge of managing fractional ownership of UTXO-based
 - **Comprehensive API**: Integrate with your existing applications through a RESTful API
 - **Secure by Design**: No traditional database, all data stored on an internal blockchain
 
+## Prerequisites
+
+Before installing FractaLedger, ensure you have the following prerequisites:
+
+- **Node.js (v14 or later)** - Required to run the application
+- **npm (v6 or later)** - Required to install dependencies
+
+Depending on your connection type, you may also need:
+
+- **Hyperledger Fabric** - Required for the internal ledger functionality
+  - Docker and Docker Compose for running Fabric components
+  - Fabric binaries (fabric-ca-client, peer, orderer)
+  - Fabric SDK dependencies
+
+- **Cryptocurrency Full Nodes** (for fullNode connection type)
+  - Bitcoin Core for Bitcoin connections
+  - Litecoin Core for Litecoin connections
+  - Dogecoin Core for Dogecoin connections
+
+- **SPV Servers** (for spv connection type)
+  - Electrum servers or compatible SPV protocol servers
+
+- **API Keys** (for api connection type)
+  - BlockCypher API key
+  - Blockstream API access
+  - Other blockchain API service credentials
+
 ## Installation
 
 ```bash
@@ -31,11 +58,31 @@ cp .env.example .env
 
 # Edit configuration files
 # - Update config.json with your blockchain connection details
-# - Add your wallet secrets to .env
+# - Add your wallet secrets to .env (keep this file secure and never commit it to version control)
 
 # Start the system
 npm start
 ```
+
+## Hyperledger Fabric Setup
+
+FractaLedger requires Hyperledger Fabric as its internal ledger. While the application handles much of the Fabric interaction, you'll need to set up the Fabric network first:
+
+1. **Install Fabric Prerequisites**:
+   - Docker and Docker Compose
+   - Go programming language (v1.14 or later)
+   - Fabric binaries
+
+2. **Set Up Fabric Network**:
+   - Use the Fabric test network or set up your own network
+   - Create a channel for FractaLedger
+   - Generate connection profiles and certificates
+
+3. **Configure FractaLedger**:
+   - Update the `hyperledger` section in `config.json` with your network details
+   - Set the appropriate environment variables in `.env`
+
+For detailed Fabric setup instructions, refer to the [Hyperledger Fabric documentation](https://hyperledger-fabric.readthedocs.io/).
 
 ## Configuration
 
@@ -138,6 +185,23 @@ You can configure multiple wallets with different connection types for the same 
 
 Sensitive information like private keys and API keys should be stored in environment variables. See `.env.example` for a complete list of required environment variables.
 
+### Custom Environment File Location
+
+By default, FractaLedger looks for the `.env` file in the current working directory. However, you can specify a custom location for your environment file in the `config.json`:
+
+```json
+{
+  "environment": {
+    "envFilePath": "/path/to/your/.env"
+  }
+}
+```
+
+This allows you to:
+- Keep your environment variables in a more secure location
+- Use different environment files for different environments (development, staging, production)
+- Share configuration files without sharing sensitive information
+
 ## Project Structure
 
 ```
@@ -159,9 +223,11 @@ fractaledger/
 │   ├── wallet/               # Wallet management
 │   └── index.js              # Main entry point
 ├── API.md                    # API documentation
-├── config-template.json      # Configuration template
+├── config.json               # Configuration file (created from template)
+├── .env                      # Environment variables (created from template)
 ├── .env.example              # Environment variables template
 ├── package.json              # Project dependencies
+├── setup.sh                  # Setup script
 └── README.md                 # This file
 ```
 

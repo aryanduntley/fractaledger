@@ -1,0 +1,162 @@
+{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "connectionType": "spv",
+      "connectionDetails": {
+        "server": "localhost:50001",
+        "network": "mainnet"
+      },
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_1_SECRET"
+    },
+    {
+      "name": "btc_wallet_2",
+      "connectionType": "api",
+      "connectionDetails": {
+        "provider": "blockCypher",
+        "endpoint": "https://api.blockcypher.com/v1/btc/main",
+        "apiKeyEnvVar": "BLOCKCYPHER_API_KEY"
+      },
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_2_SECRET"
+    },
+    {
+      "name": "btc_wallet_3",
+      "connectionType": "fullNode",
+      "connectionDetails": {
+        "host": "localhost",
+        "port": 8332,
+        "username": "bitcoinrpc",
+        "password": "rpcpassword",
+        "protocol": "http",
+        "network": "mainnet"
+      },
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_3_SECRET"
+    }
+  ],
+  "litecoin": [
+    {
+      "name": "ltc_wallet_1",
+      "connectionType": "spv",
+      "connectionDetails": {
+        "server": "localhost:50002",
+        "network": "mainnet"
+      },
+      "walletAddress": "ltc1q...",
+      "secretEnvVar": "LTC_WALLET_1_SECRET"
+    },
+    {
+      "name": "ltc_wallet_2",
+      "connectionType": "api",
+      "connectionDetails": {
+        "provider": "blockCypher",
+        "endpoint": "https://api.blockcypher.com/v1/ltc/main",
+        "apiKeyEnvVar": "BLOCKCYPHER_API_KEY"
+      },
+      "walletAddress": "ltc1q...",
+      "secretEnvVar": "LTC_WALLET_2_SECRET"
+    },
+    {
+      "name": "ltc_wallet_3",
+      "connectionType": "fullNode",
+      "connectionDetails": {
+        "host": "localhost",
+        "port": 9332,
+        "username": "litecoinrpc",
+        "password": "rpcpassword",
+        "protocol": "http",
+        "network": "mainnet"
+      },
+      "walletAddress": "ltc1q...",
+      "secretEnvVar": "LTC_WALLET_3_SECRET"
+    }
+  ],
+  "dogecoin": [
+    {
+      "name": "doge_wallet_1",
+      "connectionType": "spv",
+      "connectionDetails": {
+        "server": "localhost:50003",
+        "network": "mainnet"
+      },
+      "walletAddress": "D...",
+      "secretEnvVar": "DOGE_WALLET_1_SECRET"
+    },
+    {
+      "name": "doge_wallet_2",
+      "connectionType": "api",
+      "connectionDetails": {
+        "provider": "blockCypher",
+        "endpoint": "https://api.blockcypher.com/v1/doge/main",
+        "apiKeyEnvVar": "BLOCKCYPHER_API_KEY"
+      },
+      "walletAddress": "D...",
+      "secretEnvVar": "DOGE_WALLET_2_SECRET"
+    },
+    {
+      "name": "doge_wallet_3",
+      "connectionType": "fullNode",
+      "connectionDetails": {
+        "host": "localhost",
+        "port": 22555,
+        "username": "dogecoinrpc",
+        "password": "rpcpassword",
+        "protocol": "http",
+        "network": "mainnet"
+      },
+      "walletAddress": "D...",
+      "secretEnvVar": "DOGE_WALLET_3_SECRET"
+    }
+  ],
+  "hyperledger": {
+    "networkConfig": {
+      "ordererUrl": "grpcs://localhost:7050",
+      "peerUrl": "grpcs://localhost:7051",
+      "channelName": "fractaledger-channel",
+      "chaincodeName": "fractaledger-chaincode",
+      "mspId": "Org1MSP",
+      "walletPath": "./wallet",
+      "connectionProfilePath": "./connection-profile.json"
+    },
+    "adminUser": {
+      "username": "admin",
+      "password": "adminpw"
+    }
+  },
+  "api": {
+    "port": 3000,
+    "host": "localhost",
+    "cors": {
+      "origin": "*",
+      "methods": ["GET", "POST", "PUT", "DELETE"],
+      "allowedHeaders": ["Content-Type", "Authorization"]
+    },
+    "auth": {
+      "jwtSecret": "JWT_SECRET",
+      "expiresIn": "1d"
+    },
+    "rateLimiting": {
+      "windowMs": 900000,
+      "max": 100
+    }
+  },
+  "logging": {
+    "level": "info",
+    "file": "./logs/fractaledger.log",
+    "maxSize": "10m",
+    "maxFiles": "7d"
+  },
+  "smartContract": {
+    "customizablePath": "./chaincode/custom",
+    "templates": {
+      "default": "./chaincode/templates/default",
+      "merchantFee": "./chaincode/templates/merchant-fee",
+      "employeePayment": "./chaincode/templates/employee-payment"
+    }
+  },
+  "environment": {
+    "envFilePath": "./.env"
+  }
+}

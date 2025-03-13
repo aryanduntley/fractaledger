@@ -9,9 +9,6 @@ const path = require('path');
 const dotenv = require('dotenv');
 const Joi = require('joi');
 
-// Load environment variables from .env file
-dotenv.config();
-
 /**
  * Load configuration from config.json and environment variables
  * @returns {Object} The loaded and validated configuration
@@ -29,6 +26,18 @@ async function loadConfig() {
     
     // Validate configuration
     validateConfig(config);
+    
+    // Load environment variables from .env file
+    // Check if the environment section exists and has an envFilePath property
+    if (config.environment && config.environment.envFilePath) {
+      const envPath = path.resolve(process.cwd(), config.environment.envFilePath);
+      dotenv.config({ path: envPath });
+      console.log(`Loaded environment variables from ${envPath}`);
+    } else {
+      // Default to .env in the current working directory
+      dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+      console.log('Loaded environment variables from default .env file');
+    }
     
     // Process environment variables
     processEnvironmentVariables(config);
@@ -104,7 +113,10 @@ function validateConfig(config) {
     smartContract: Joi.object({
       customizablePath: Joi.string().required(),
       templates: Joi.object().required()
-    }).required()
+    }).required(),
+    environment: Joi.object({
+      envFilePath: Joi.string()
+    })
   });
   
   const { error } = schema.validate(config);

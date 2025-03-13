@@ -44,7 +44,7 @@ describe('End-to-End Tests', () => {
   let app;
   let token;
   
-  before(async () => {
+  beforeAll(async () => {
     // Set up mock blockchain connectors
     mockBlockchainConnectors.bitcoin = {
       btc_wallet_1: {

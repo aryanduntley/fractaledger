@@ -69,6 +69,7 @@ create_config_files() {
     print_message "Creating config.json from template..."
     cp config-template.json config.json
     print_success "config.json created successfully."
+    print_message "You can customize the config.json file to specify your blockchain connections and other settings."
   else
     print_message "config.json already exists. Skipping..."
   fi
@@ -79,6 +80,7 @@ create_config_files() {
     cp .env.example .env
     print_success ".env created successfully."
     print_message "Please edit .env to add your wallet secrets and API keys."
+    print_message "Keep this file secure and never commit it to version control."
   else
     print_message ".env already exists. Skipping..."
   fi
