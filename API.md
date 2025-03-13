@@ -134,7 +134,12 @@ POST /api/internal-wallets
 {
   "blockchain": "bitcoin",
   "primaryWalletName": "btc_wallet_1",
-  "internalWalletId": "internal_wallet_1"
+  "internalWalletId": "internal_wallet_1",
+  "metadata": {
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "accountType": "premium"
+  }
 }
 ```
 
@@ -146,9 +151,16 @@ Response:
   "blockchain": "bitcoin",
   "primaryWalletName": "btc_wallet_1",
   "balance": 0,
+  "metadata": {
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "accountType": "premium"
+  },
   "createdAt": "2025-03-12T12:00:00Z"
 }
 ```
+
+> **Note**: The `metadata` field is optional and can contain any JSON object up to 2KB in size. It can be used to store additional information about the wallet.
 
 ### Get All Internal Wallets
 
@@ -165,6 +177,11 @@ Response:
     "blockchain": "bitcoin",
     "primaryWalletName": "btc_wallet_1",
     "balance": 0.5,
+    "metadata": {
+      "customerName": "John Doe",
+      "customerEmail": "john@example.com",
+      "accountType": "premium"
+    },
     "createdAt": "2025-03-12T12:00:00Z"
   },
   {
@@ -172,6 +189,11 @@ Response:
     "blockchain": "litecoin",
     "primaryWalletName": "ltc_wallet_1",
     "balance": 2.5,
+    "metadata": {
+      "customerName": "Jane Smith",
+      "customerEmail": "jane@example.com",
+      "accountType": "standard"
+    },
     "createdAt": "2025-03-12T12:00:00Z"
   }
 ]
@@ -191,6 +213,11 @@ Response:
   "blockchain": "bitcoin",
   "primaryWalletName": "btc_wallet_1",
   "balance": 0.5,
+  "metadata": {
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "accountType": "premium"
+  },
   "createdAt": "2025-03-12T12:00:00Z"
 }
 ```
@@ -209,6 +236,41 @@ Response:
   "balance": 0.5
 }
 ```
+
+### Update Internal Wallet Metadata
+
+```
+PUT /api/internal-wallets/:id/metadata
+{
+  "metadata": {
+    "customerName": "John Doe",
+    "customerEmail": "john.doe@example.com",
+    "accountType": "premium",
+    "notes": "Customer since 2023"
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "id": "internal_wallet_1",
+  "blockchain": "bitcoin",
+  "primaryWalletName": "btc_wallet_1",
+  "balance": 0.5,
+  "metadata": {
+    "customerName": "John Doe",
+    "customerEmail": "john.doe@example.com",
+    "accountType": "premium",
+    "notes": "Customer since 2023"
+  },
+  "createdAt": "2025-03-12T12:00:00Z",
+  "updatedAt": "2025-03-12T13:30:00Z"
+}
+```
+
+> **Note**: The metadata object can be up to 2KB in size. This endpoint completely replaces the existing metadata with the new metadata provided.
 
 ## Transactions
 
@@ -255,6 +317,11 @@ Response:
       "blockchain": "bitcoin",
       "primaryWalletName": "btc_wallet_1",
       "balance": 0.5,
+      "metadata": {
+        "customerName": "John Doe",
+        "customerEmail": "john@example.com",
+        "accountType": "premium"
+      },
       "createdAt": "2025-03-12T12:00:00Z",
       "updatedAt": "2025-03-12T12:00:00Z"
     }
@@ -267,6 +334,11 @@ Response:
       "blockchain": "bitcoin",
       "primaryWalletName": "btc_wallet_1",
       "balance": 0.6,
+      "metadata": {
+        "customerName": "John Doe",
+        "customerEmail": "john@example.com",
+        "accountType": "standard"
+      },
       "createdAt": "2025-03-12T12:00:00Z",
       "updatedAt": "2025-03-11T10:00:00Z"
     }

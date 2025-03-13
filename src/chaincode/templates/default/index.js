@@ -29,9 +29,10 @@ class FractaLedgerContract extends Contract {
    * @param {string} id The internal wallet ID
    * @param {string} blockchain The blockchain type (bitcoin, litecoin, dogecoin)
    * @param {string} primaryWalletName The primary wallet name
+   * @param {string} metadata Optional metadata for the wallet (max 2KB)
    * @returns {Object} The created internal wallet
    */
-  async createInternalWallet(ctx, id, blockchain, primaryWalletName) {
+  async createInternalWallet(ctx, id, blockchain, primaryWalletName, metadata = '{}') {
     console.info('============= START : Create Internal Wallet ===========');
     
     // Check if the internal wallet already exists
@@ -40,12 +41,29 @@ class FractaLedgerContract extends Contract {
       throw new Error(`Internal wallet ${id} already exists`);
     }
     
+    // Parse and validate metadata
+    let parsedMetadata;
+    try {
+      parsedMetadata = JSON.parse(metadata);
+      
+      // Check metadata size (max 2KB)
+      if (Buffer.from(JSON.stringify(parsedMetadata)).length > 2048) {
+        throw new Error('Metadata size exceeds the maximum limit of 2KB');
+      }
+    } catch (error) {
+      if (error.message.includes('maximum limit')) {
+        throw error;
+      }
+      throw new Error(`Invalid metadata format: ${error.message}`);
+    }
+    
     // Create the internal wallet
     const internalWallet = {
       id,
       blockchain,
       primaryWalletName,
       balance: 0,
+      metadata: parsedMetadata,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -324,6 +342,52 @@ class FractaLedgerContract extends Contract {
     console.info('============= END : Get Transaction History ===========');
     
     return transactions;
+  }
+  
+  /**
+   * Update the metadata of an internal wallet
+   * @param {Context} ctx The transaction context
+   * @param {string} id The internal wallet ID
+   * @param {string} metadata The new metadata (max 2KB)
+   * @returns {Object} The updated internal wallet
+   */
+  async updateInternalWalletMetadata(ctx, id, metadata) {
+    console.info('============= START : Update Internal Wallet Metadata ===========');
+    
+    // Get the internal wallet from the ledger
+    const walletAsBytes = await ctx.stub.getState(id);
+    if (!walletAsBytes || walletAsBytes.length === 0) {
+      throw new Error(`Internal wallet ${id} does not exist`);
+    }
+    
+    const internalWallet = JSON.parse(walletAsBytes.toString());
+    
+    // Parse and validate metadata
+    let parsedMetadata;
+    try {
+      parsedMetadata = JSON.parse(metadata);
+      
+      // Check metadata size (max 2KB)
+      if (Buffer.from(JSON.stringify(parsedMetadata)).length > 2048) {
+        throw new Error('Metadata size exceeds the maximum limit of 2KB');
+      }
+    } catch (error) {
+      if (error.message.includes('maximum limit')) {
+        throw error;
+      }
+      throw new Error(`Invalid metadata format: ${error.message}`);
+    }
+    
+    // Update the metadata
+    internalWallet.metadata = parsedMetadata;
+    internalWallet.updatedAt = new Date().toISOString();
+    
+    // Store the updated internal wallet on the ledger
+    await ctx.stub.putState(id, Buffer.from(JSON.stringify(internalWallet)));
+    
+    console.info('============= END : Update Internal Wallet Metadata ===========');
+    
+    return internalWallet;
   }
   
   // Add your custom chaincode functions here

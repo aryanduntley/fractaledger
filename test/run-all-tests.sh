@@ -36,7 +36,7 @@ run_specific_tests() {
 # Run component tests
 run_component_tests() {
   print_message "Running component tests..."
-  npm test -- blockchain-connector.test.js connectors.test.js wallet-manager.test.js
+  npm test -- blockchain-connector.test.js connectors.test.js wallet-manager.test.js wallet-id-uniqueness.test.js
 }
 
 # Run chaincode tests

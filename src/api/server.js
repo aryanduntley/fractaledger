@@ -114,13 +114,13 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
     // Internal wallet management
     app.post('/api/internal-wallets', authenticateJWT, async (req, res) => {
       try {
-        const { blockchain, primaryWalletName, internalWalletId } = req.body;
+        const { blockchain, primaryWalletName, internalWalletId, metadata } = req.body;
         
         if (!blockchain || !primaryWalletName || !internalWalletId) {
           return res.status(400).json({ error: 'Missing required parameters' });
         }
         
-        const internalWallet = await walletManager.createInternalWallet(blockchain, primaryWalletName, internalWalletId);
+        const internalWallet = await walletManager.createInternalWallet(blockchain, primaryWalletName, internalWalletId, metadata || {});
         res.json(internalWallet);
       } catch (error) {
         res.status(400).json({ error: error.message });
@@ -158,6 +158,32 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
         const balance = JSON.parse(result.toString());
         
         res.json(balance);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    app.put('/api/internal-wallets/:id/metadata', authenticateJWT, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { metadata } = req.body;
+        
+        if (!metadata) {
+          return res.status(400).json({ error: 'Missing required parameters' });
+        }
+        
+        // Check if the internal wallet exists
+        const internalWallet = await walletManager.getInternalWallet(id);
+        
+        if (!internalWallet) {
+          return res.status(404).json({ error: 'Internal wallet not found' });
+        }
+        
+        // Update the metadata
+        const result = await fabricClient.submitTransaction('updateInternalWalletMetadata', id, JSON.stringify(metadata));
+        const updatedWallet = JSON.parse(result.toString());
+        
+        res.json(updatedWallet);
       } catch (error) {
         res.status(500).json({ error: error.message });
       }
