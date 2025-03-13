@@ -1,0 +1,8 @@
+test/
+__tests__/
+spec/
+coverage/
+node_modules/
+.git/
+.github/
+.env

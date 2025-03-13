@@ -1,0 +1,21 @@
+{
+  "name": "fractaledger-merchant-fee-chaincode",
+  "version": "1.0.0",
+  "description": "FractaLedger Merchant Fee Chaincode for Hyperledger Fabric",
+  "main": "index.js",
+  "scripts": {
+    "start": "fabric-chaincode-node start",
+    "test": "jest"
+  },
+  "engines": {
+    "node": ">=12.0.0",
+    "npm": ">=6.0.0"
+  },
+  "dependencies": {
+    "fabric-contract-api": "^2.2.0",
+    "fabric-shim": "^2.2.0"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0"
+  }
+}
