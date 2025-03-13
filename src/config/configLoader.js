@@ -83,19 +83,47 @@ function validateConfig(config) {
       })
     ),
     hyperledger: Joi.object({
-      networkConfig: Joi.object({
-        ordererUrl: Joi.string().required(),
-        peerUrl: Joi.string().required(),
-        channelName: Joi.string().required(),
-        chaincodeName: Joi.string().required(),
-        mspId: Joi.string().required(),
-        walletPath: Joi.string().required(),
-        connectionProfilePath: Joi.string().required()
-      }).required(),
-      adminUser: Joi.object({
-        username: Joi.string().required(),
-        password: Joi.string().required()
-      }).required()
+      connectionProfilePath: Joi.string().required(),
+      channelName: Joi.string().required(),
+      chaincodeName: Joi.string().required(),
+      mspId: Joi.string().required(),
+      walletPath: Joi.string().required(),
+      caUrl: Joi.string().required(),
+      caName: Joi.string().required(),
+      adminUserId: Joi.string().required(),
+      adminUserSecret: Joi.string().required(),
+      userId: Joi.string().required(),
+      tlsEnabled: Joi.boolean().default(true),
+      tlsCertPath: Joi.string().when('tlsEnabled', {
+        is: true,
+        then: Joi.required(),
+        otherwise: Joi.optional()
+      }),
+      peerEndpoint: Joi.string().required(),
+      peerHostname: Joi.string().required(),
+      ordererEndpoint: Joi.string().required(),
+      ordererHostname: Joi.string().required(),
+      ordererTlsCertPath: Joi.string().when('tlsEnabled', {
+        is: true,
+        then: Joi.required(),
+        otherwise: Joi.optional()
+      }),
+      discovery: Joi.object({
+        enabled: Joi.boolean().default(true),
+        asLocalhost: Joi.boolean().default(true)
+      }).default({
+        enabled: true,
+        asLocalhost: true
+      }),
+      eventHandling: Joi.object({
+        commitTimeout: Joi.number().default(300),
+        endorsementTimeout: Joi.number().default(30),
+        blockEventListenerEnabled: Joi.boolean().default(true)
+      }).default({
+        commitTimeout: 300,
+        endorsementTimeout: 30,
+        blockEventListenerEnabled: true
+      })
     }).required(),
     api: Joi.object({
       port: Joi.number().default(3000),
@@ -198,6 +226,103 @@ function processEnvironmentVariables(config) {
     const jwtSecret = process.env[config.api.auth.jwtSecret];
     if (jwtSecret) {
       config.api.auth.jwtSecret = jwtSecret;
+    }
+  }
+  
+  // Process Hyperledger Fabric environment variables
+  if (config.hyperledger) {
+    // Connection profile path
+    if (process.env.HYPERLEDGER_CONNECTION_PROFILE_PATH) {
+      config.hyperledger.connectionProfilePath = process.env.HYPERLEDGER_CONNECTION_PROFILE_PATH;
+    }
+    
+    // Channel and chaincode
+    if (process.env.HYPERLEDGER_CHANNEL_NAME) {
+      config.hyperledger.channelName = process.env.HYPERLEDGER_CHANNEL_NAME;
+    }
+    if (process.env.HYPERLEDGER_CHAINCODE_NAME) {
+      config.hyperledger.chaincodeName = process.env.HYPERLEDGER_CHAINCODE_NAME;
+    }
+    
+    // MSP ID
+    if (process.env.HYPERLEDGER_MSP_ID) {
+      config.hyperledger.mspId = process.env.HYPERLEDGER_MSP_ID;
+    }
+    
+    // Wallet path
+    if (process.env.HYPERLEDGER_WALLET_PATH) {
+      config.hyperledger.walletPath = process.env.HYPERLEDGER_WALLET_PATH;
+    }
+    
+    // CA configuration
+    if (process.env.HYPERLEDGER_CA_URL) {
+      config.hyperledger.caUrl = process.env.HYPERLEDGER_CA_URL;
+    }
+    if (process.env.HYPERLEDGER_CA_NAME) {
+      config.hyperledger.caName = process.env.HYPERLEDGER_CA_NAME;
+    }
+    
+    // Admin credentials
+    if (process.env.HYPERLEDGER_ADMIN_USER_ID) {
+      config.hyperledger.adminUserId = process.env.HYPERLEDGER_ADMIN_USER_ID;
+    }
+    if (process.env.HYPERLEDGER_ADMIN_USER_SECRET) {
+      config.hyperledger.adminUserSecret = process.env.HYPERLEDGER_ADMIN_USER_SECRET;
+    }
+    
+    // User credentials
+    if (process.env.HYPERLEDGER_USER_ID) {
+      config.hyperledger.userId = process.env.HYPERLEDGER_USER_ID;
+    }
+    
+    // TLS configuration
+    if (process.env.HYPERLEDGER_TLS_ENABLED) {
+      config.hyperledger.tlsEnabled = process.env.HYPERLEDGER_TLS_ENABLED === 'true';
+    }
+    if (process.env.HYPERLEDGER_TLS_CERT_PATH) {
+      config.hyperledger.tlsCertPath = process.env.HYPERLEDGER_TLS_CERT_PATH;
+    }
+    
+    // Peer and orderer endpoints
+    if (process.env.HYPERLEDGER_PEER_ENDPOINT) {
+      config.hyperledger.peerEndpoint = process.env.HYPERLEDGER_PEER_ENDPOINT;
+    }
+    if (process.env.HYPERLEDGER_PEER_HOSTNAME) {
+      config.hyperledger.peerHostname = process.env.HYPERLEDGER_PEER_HOSTNAME;
+    }
+    if (process.env.HYPERLEDGER_ORDERER_ENDPOINT) {
+      config.hyperledger.ordererEndpoint = process.env.HYPERLEDGER_ORDERER_ENDPOINT;
+    }
+    if (process.env.HYPERLEDGER_ORDERER_HOSTNAME) {
+      config.hyperledger.ordererHostname = process.env.HYPERLEDGER_ORDERER_HOSTNAME;
+    }
+    if (process.env.HYPERLEDGER_ORDERER_TLS_CERT_PATH) {
+      config.hyperledger.ordererTlsCertPath = process.env.HYPERLEDGER_ORDERER_TLS_CERT_PATH;
+    }
+    
+    // Discovery configuration
+    if (!config.hyperledger.discovery) {
+      config.hyperledger.discovery = {};
+    }
+    if (process.env.HYPERLEDGER_DISCOVERY_ENABLED) {
+      config.hyperledger.discovery.enabled = process.env.HYPERLEDGER_DISCOVERY_ENABLED === 'true';
+    }
+    if (process.env.HYPERLEDGER_DISCOVERY_AS_LOCALHOST) {
+      config.hyperledger.discovery.asLocalhost = process.env.HYPERLEDGER_DISCOVERY_AS_LOCALHOST === 'true';
+    }
+    
+    // Event handling
+    if (!config.hyperledger.eventHandling) {
+      config.hyperledger.eventHandling = {};
+    }
+    if (process.env.HYPERLEDGER_COMMIT_TIMEOUT) {
+      config.hyperledger.eventHandling.commitTimeout = parseInt(process.env.HYPERLEDGER_COMMIT_TIMEOUT, 10);
+    }
+    if (process.env.HYPERLEDGER_ENDORSEMENT_TIMEOUT) {
+      config.hyperledger.eventHandling.endorsementTimeout = parseInt(process.env.HYPERLEDGER_ENDORSEMENT_TIMEOUT, 10);
+    }
+    if (process.env.HYPERLEDGER_BLOCK_EVENT_LISTENER_ENABLED) {
+      config.hyperledger.eventHandling.blockEventListenerEnabled = process.env.HYPERLEDGER_BLOCK_EVENT_LISTENER_ENABLED === 'true';
     }
   }
 }

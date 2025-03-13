@@ -1,13 +1,35 @@
 /**
  * API Connector
  * 
- * This module provides a connector for interacting with blockchain API services.
+ * This module provides a production-ready connector for interacting with blockchain API services.
+ * It includes connection pooling, retry mechanisms, caching, and comprehensive error handling.
  */
 
 const { BlockchainConnector } = require('../blockchainConnector');
 const axios = require('axios');
 const bitcoinjs = require('bitcoinjs-lib');
 const bs58check = require('bs58check');
+const winston = require('winston');
+
+// Configure logger
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'api-connector' },
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    }),
+    new winston.transports.File({ filename: 'logs/api-error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'logs/api.log' })
+  ]
+});
 
 /**
  * API Connector class
@@ -31,6 +53,43 @@ class ApiConnector extends BlockchainConnector {
     this.endpoint = config.connectionDetails.endpoint || this.getDefaultEndpoint(blockchain);
     this.apiKey = config.connectionDetails.apiKey || '';
     this.network = config.connectionDetails.network || 'mainnet';
+    
+    // Connection pool configuration
+    this.providerPool = config.connectionDetails.providerPool || [this.provider];
+    this.endpointPool = config.connectionDetails.endpointPool || [this.endpoint];
+    this.apiKeyPool = config.connectionDetails.apiKeyPool || [this.apiKey];
+    this.currentProviderIndex = 0;
+    
+    // Retry configuration
+    this.maxRetries = config.connectionDetails.maxRetries || 3;
+    this.retryDelay = config.connectionDetails.retryDelay || 1000; // 1 second
+    this.maxRetryDelay = config.connectionDetails.maxRetryDelay || 30000; // 30 seconds
+    
+    // Rate limiting configuration
+    this.rateLimitPerMinute = config.connectionDetails.rateLimitPerMinute || 60;
+    this.requestCount = 0;
+    this.requestResetTime = Date.now() + 60000; // 1 minute
+    
+    // Caching configuration
+    this.cacheEnabled = config.connectionDetails.cacheEnabled !== false;
+    this.cacheExpiry = config.connectionDetails.cacheExpiry || 60000; // 1 minute
+    this.balanceCache = null;
+    this.balanceCacheTime = 0;
+    this.transactionCache = new Map();
+    this.blockchainInfoCache = null;
+    this.blockchainInfoCacheTime = 0;
+    this.feeEstimatesCache = null;
+    this.feeEstimatesCacheTime = 0;
+    
+    // Circuit breaker configuration
+    this.circuitBreakerEnabled = config.connectionDetails.circuitBreakerEnabled !== false;
+    this.failureThreshold = config.connectionDetails.failureThreshold || 5;
+    this.resetTimeout = config.connectionDetails.resetTimeout || 60000; // 1 minute
+    this.failureCount = 0;
+    this.circuitOpen = false;
+    this.circuitOpenTime = 0;
+    
+    logger.info(`Created API connector for ${blockchain}/${this.name} using ${this.provider}`);
     
     // Initialize the client
     this.client = null;
@@ -418,16 +477,192 @@ class ApiConnector extends BlockchainConnector {
   }
   
   /**
+   * Check if the circuit breaker is open
+   * @returns {boolean} True if the circuit breaker is open
+   * @private
+   */
+  _isCircuitOpen() {
+    if (!this.circuitBreakerEnabled) {
+      return false;
+    }
+    
+    // If the circuit is open, check if the reset timeout has elapsed
+    if (this.circuitOpen) {
+      const now = Date.now();
+      if (now - this.circuitOpenTime > this.resetTimeout) {
+        // Reset the circuit breaker
+        logger.info(`Resetting circuit breaker for ${this.blockchain}/${this.name}`);
+        this.circuitOpen = false;
+        this.failureCount = 0;
+        return false;
+      }
+      return true;
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Handle a request failure
+   * @private
+   */
+  _handleFailure() {
+    if (!this.circuitBreakerEnabled) {
+      return;
+    }
+    
+    this.failureCount++;
+    
+    // If we've reached the failure threshold, open the circuit
+    if (this.failureCount >= this.failureThreshold) {
+      logger.warn(`Circuit breaker tripped for ${this.blockchain}/${this.name} after ${this.failureCount} failures`);
+      this.circuitOpen = true;
+      this.circuitOpenTime = Date.now();
+    }
+  }
+  
+  /**
+   * Handle a request success
+   * @private
+   */
+  _handleSuccess() {
+    if (!this.circuitBreakerEnabled) {
+      return;
+    }
+    
+    // Reset the failure count on success
+    this.failureCount = 0;
+  }
+  
+  /**
+   * Check if we've exceeded the rate limit
+   * @returns {boolean} True if we've exceeded the rate limit
+   * @private
+   */
+  _isRateLimited() {
+    const now = Date.now();
+    
+    // Reset the request count if the reset time has elapsed
+    if (now > this.requestResetTime) {
+      this.requestCount = 0;
+      this.requestResetTime = now + 60000; // 1 minute
+    }
+    
+    // Check if we've exceeded the rate limit
+    return this.requestCount >= this.rateLimitPerMinute;
+  }
+  
+  /**
+   * Increment the request count
+   * @private
+   */
+  _incrementRequestCount() {
+    this.requestCount++;
+  }
+  
+  /**
+   * Switch to the next provider in the pool
+   * @private
+   */
+  _switchProvider() {
+    // Increment the provider index
+    this.currentProviderIndex = (this.currentProviderIndex + 1) % this.providerPool.length;
+    
+    // Update the provider, endpoint, and API key
+    this.provider = this.providerPool[this.currentProviderIndex];
+    this.endpoint = this.endpointPool[this.currentProviderIndex % this.endpointPool.length];
+    this.apiKey = this.apiKeyPool[this.currentProviderIndex % this.apiKeyPool.length];
+    
+    logger.info(`Switching to provider ${this.provider} with endpoint ${this.endpoint}`);
+    
+    // Reinitialize the client
+    this.initializeClient();
+  }
+  
+  /**
+   * Execute a method with retry logic and circuit breaker
+   * @param {Function} method The method to execute
+   * @param {Array} args The arguments to pass to the method
+   * @returns {Promise<any>} The result of the method
+   * @private
+   */
+  async _executeWithRetry(method, args = []) {
+    // Check if the circuit breaker is open
+    if (this._isCircuitOpen()) {
+      logger.warn(`Circuit breaker open for ${this.blockchain}/${this.name}, rejecting request`);
+      throw new Error('Service unavailable due to circuit breaker');
+    }
+    
+    // Check if we've exceeded the rate limit
+    if (this._isRateLimited()) {
+      logger.warn(`Rate limit exceeded for ${this.blockchain}/${this.name}, rejecting request`);
+      throw new Error('Rate limit exceeded');
+    }
+    
+    // Increment the request count
+    this._incrementRequestCount();
+    
+    let retries = 0;
+    let delay = this.retryDelay;
+    
+    while (true) {
+      try {
+        // Execute the method
+        const result = await method(...args);
+        
+        // Handle success
+        this._handleSuccess();
+        
+        return result;
+      } catch (error) {
+        // Handle failure
+        this._handleFailure();
+        
+        // If we've exhausted all retries, throw the error
+        if (retries >= this.maxRetries) {
+          // If we have multiple providers, try switching to the next one
+          if (this.providerPool.length > 1) {
+            logger.warn(`Switching provider after ${retries} failed retries`);
+            this._switchProvider();
+            
+            // Reset retries and try again with the new provider
+            retries = 0;
+            delay = this.retryDelay;
+            continue;
+          }
+          
+          logger.error(`Failed after ${retries} retries: ${error.message}`);
+          throw error;
+        }
+        
+        // Wait before retrying
+        logger.warn(`Retrying after error: ${error.message} (${retries + 1}/${this.maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Increase the delay for the next retry (exponential backoff)
+        delay = Math.min(delay * 2, this.maxRetryDelay);
+        
+        // Increment the retry count
+        retries++;
+      }
+    }
+  }
+  
+  /**
    * Test the connection to the API
    * @returns {Promise<boolean>} True if the connection is successful
    */
   async testConnection() {
     try {
       // Test the connection by getting blockchain information
-      await this.client.getBlockchainInfo();
+      await this._executeWithRetry(async () => {
+        return await this.client.getBlockchainInfo();
+      });
+      
+      logger.info(`Successfully connected to ${this.blockchain} API using ${this.provider}`);
       return true;
     } catch (error) {
-      console.error(`Failed to connect to ${this.blockchain} API: ${error.message}`);
+      logger.error(`Failed to connect to ${this.blockchain} API: ${error.message}`);
       return false;
     }
   }
@@ -438,19 +673,41 @@ class ApiConnector extends BlockchainConnector {
    */
   async getBalance() {
     try {
-      const addressInfo = await this.client.getAddress(this.walletAddress);
-      
-      // Different APIs return balance in different formats
-      if (this.provider === 'blockCypher') {
-        return addressInfo.balance / 100000000; // Convert from satoshis to BTC
-      } else if (this.provider === 'blockstream') {
-        return addressInfo.balance; // Already converted in getAddress
-      } else if (this.provider === 'blockchair') {
-        return addressInfo.address.balance / 100000000; // Convert from satoshis to BTC
+      // Check if we have a cached balance that's still valid
+      const now = Date.now();
+      if (this.cacheEnabled && this.balanceCache !== null && now - this.balanceCacheTime < this.cacheExpiry) {
+        logger.debug(`Using cached balance for ${this.blockchain}/${this.name}`);
+        return this.balanceCache;
       }
       
-      throw new Error(`Unsupported API provider: ${this.provider}`);
+      // Get the balance from the API
+      const addressInfo = await this._executeWithRetry(async () => {
+        return await this.client.getAddress(this.walletAddress);
+      });
+      
+      // Different APIs return balance in different formats
+      let balance;
+      if (this.provider === 'blockCypher') {
+        balance = addressInfo.balance / 100000000; // Convert from satoshis to BTC
+      } else if (this.provider === 'blockstream') {
+        balance = addressInfo.balance; // Already converted in getAddress
+      } else if (this.provider === 'blockchair') {
+        balance = addressInfo.address.balance / 100000000; // Convert from satoshis to BTC
+      } else {
+        throw new Error(`Unsupported API provider: ${this.provider}`);
+      }
+      
+      // Cache the balance
+      if (this.cacheEnabled) {
+        this.balanceCache = balance;
+        this.balanceCacheTime = now;
+      }
+      
+      logger.info(`Balance for ${this.blockchain}/${this.name}: ${balance}`);
+      
+      return balance;
     } catch (error) {
+      logger.error(`Failed to get balance: ${error.message}`);
       throw new Error(`Failed to get balance: ${error.message}`);
     }
   }
@@ -462,26 +719,63 @@ class ApiConnector extends BlockchainConnector {
    */
   async getTransactionHistory(limit = 10) {
     try {
-      const addressInfo = await this.client.getAddress(this.walletAddress);
+      // Get the address information from the API
+      const addressInfo = await this._executeWithRetry(async () => {
+        return await this.client.getAddress(this.walletAddress);
+      });
       
       // Different APIs return transaction history in different formats
       if (this.provider === 'blockCypher') {
-        return addressInfo.txrefs
+        const transactions = addressInfo.txrefs
           .slice(0, limit)
-          .map(tx => ({
-            txid: tx.tx_hash,
-            amount: tx.value / 100000000, // Convert from satoshis to BTC
-            confirmations: tx.confirmations,
-            timestamp: new Date(tx.confirmed).toISOString(),
-            type: tx.spent ? 'sent' : 'received'
-          }));
+          .map(tx => {
+            // Check if we have the transaction in the cache
+            const txid = tx.tx_hash;
+            if (this.cacheEnabled && this.transactionCache.has(txid)) {
+              logger.debug(`Using cached transaction ${txid} for ${this.blockchain}/${this.name}`);
+              return this.transactionCache.get(txid);
+            }
+            
+            // Create the transaction object
+            const transaction = {
+              txid,
+              amount: tx.value / 100000000, // Convert from satoshis to BTC
+              confirmations: tx.confirmations,
+              timestamp: new Date(tx.confirmed).toISOString(),
+              type: tx.spent ? 'sent' : 'received'
+            };
+            
+            // Cache the transaction
+            if (this.cacheEnabled) {
+              this.transactionCache.set(txid, transaction);
+            }
+            
+            return transaction;
+          });
+        
+        logger.info(`Retrieved ${transactions.length} transactions for ${this.blockchain}/${this.name}`);
+        return transactions;
       } else if (this.provider === 'blockstream') {
         const txids = addressInfo.utxos.map(utxo => utxo.txid);
         const transactions = [];
         
         for (let i = 0; i < Math.min(txids.length, limit); i++) {
-          const tx = await this.client.getTransaction(txids[i]);
-          transactions.push({
+          const txid = txids[i];
+          
+          // Check if we have the transaction in the cache
+          if (this.cacheEnabled && this.transactionCache.has(txid)) {
+            logger.debug(`Using cached transaction ${txid} for ${this.blockchain}/${this.name}`);
+            transactions.push(this.transactionCache.get(txid));
+            continue;
+          }
+          
+          // Get the transaction details
+          const tx = await this._executeWithRetry(async () => {
+            return await this.client.getTransaction(txid);
+          });
+          
+          // Create the transaction object
+          const transaction = {
             txid: tx.txid,
             amount: tx.vout.reduce((total, output) => {
               if (output.scriptpubkey_address === this.walletAddress) {
@@ -492,27 +786,59 @@ class ApiConnector extends BlockchainConnector {
             confirmations: tx.status.confirmed ? tx.status.block_height : 0,
             timestamp: tx.status.confirmed ? new Date(tx.status.block_time * 1000).toISOString() : new Date().toISOString(),
             type: 'unknown' // Need to analyze inputs and outputs to determine type
-          });
+          };
+          
+          // Cache the transaction
+          if (this.cacheEnabled) {
+            this.transactionCache.set(txid, transaction);
+          }
+          
+          transactions.push(transaction);
         }
         
+        logger.info(`Retrieved ${transactions.length} transactions for ${this.blockchain}/${this.name}`);
         return transactions;
       } else if (this.provider === 'blockchair') {
-        return addressInfo.transactions
-          .slice(0, limit)
-          .map(async txid => {
-            const tx = await this.client.getTransaction(txid);
-            return {
-              txid,
-              amount: tx.transaction.output_total / 100000000, // Convert from satoshis to BTC
-              confirmations: tx.transaction.confirmations,
-              timestamp: new Date(tx.transaction.time * 1000).toISOString(),
-              type: 'unknown' // Need to analyze inputs and outputs to determine type
-            };
+        const transactions = [];
+        const txids = addressInfo.transactions.slice(0, limit);
+        
+        for (const txid of txids) {
+          // Check if we have the transaction in the cache
+          if (this.cacheEnabled && this.transactionCache.has(txid)) {
+            logger.debug(`Using cached transaction ${txid} for ${this.blockchain}/${this.name}`);
+            transactions.push(this.transactionCache.get(txid));
+            continue;
+          }
+          
+          // Get the transaction details
+          const tx = await this._executeWithRetry(async () => {
+            return await this.client.getTransaction(txid);
           });
+          
+          // Create the transaction object
+          const transaction = {
+            txid,
+            amount: tx.transaction.output_total / 100000000, // Convert from satoshis to BTC
+            confirmations: tx.transaction.confirmations,
+            timestamp: new Date(tx.transaction.time * 1000).toISOString(),
+            type: 'unknown' // Need to analyze inputs and outputs to determine type
+          };
+          
+          // Cache the transaction
+          if (this.cacheEnabled) {
+            this.transactionCache.set(txid, transaction);
+          }
+          
+          transactions.push(transaction);
+        }
+        
+        logger.info(`Retrieved ${transactions.length} transactions for ${this.blockchain}/${this.name}`);
+        return transactions;
       }
       
       throw new Error(`Unsupported API provider: ${this.provider}`);
     } catch (error) {
+      logger.error(`Failed to get transaction history: ${error.message}`);
       throw new Error(`Failed to get transaction history: ${error.message}`);
     }
   }
@@ -526,8 +852,13 @@ class ApiConnector extends BlockchainConnector {
    */
   async sendTransaction(toAddress, amount, options = {}) {
     try {
+      logger.info(`Sending ${amount} ${this.blockchain} to ${toAddress}`);
+      
       // Validate the address
-      const isValid = await this.verifyAddress(toAddress);
+      const isValid = await this._executeWithRetry(async () => {
+        return await this.verifyAddress(toAddress);
+      });
+      
       if (!isValid) {
         throw new Error(`Invalid address: ${toAddress}`);
       }
@@ -540,7 +871,9 @@ class ApiConnector extends BlockchainConnector {
           outputs: [{ addresses: [toAddress], value: Math.round(amount * 100000000) }] // Convert from BTC to satoshis
         };
         
-        const txSkeleton = await this.client.createTransaction(newtx.inputs, newtx.outputs);
+        const txSkeleton = await this._executeWithRetry(async () => {
+          return await this.client.createTransaction(newtx.inputs, newtx.outputs);
+        });
         
         // Sign the transaction inputs
         const network = this.network === 'mainnet' ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
@@ -556,14 +889,24 @@ class ApiConnector extends BlockchainConnector {
         });
         
         // Send the signed transaction
-        const finalTx = await this.client.sendTransaction(txSkeleton);
+        const finalTx = await this._executeWithRetry(async () => {
+          return await this.client.sendTransaction(txSkeleton);
+        });
+        
+        logger.info(`Transaction sent: ${finalTx.tx.hash}`);
+        
+        // Invalidate the balance cache
+        this.balanceCache = null;
         
         return finalTx.tx.hash;
       } else if (this.provider === 'blockstream' || this.provider === 'blockchair') {
         // For Blockstream and Blockchair, we need to create and sign the transaction manually
         
         // Get the UTXOs for the wallet
-        const addressInfo = await this.client.getAddress(this.walletAddress);
+        const addressInfo = await this._executeWithRetry(async () => {
+          return await this.client.getAddress(this.walletAddress);
+        });
+        
         const utxos = this.provider === 'blockstream' ? addressInfo.utxos : addressInfo.utxo;
         
         // Calculate the total available balance
@@ -611,13 +954,21 @@ class ApiConnector extends BlockchainConnector {
         const txHex = tx.toHex();
         
         // Send the transaction
-        const txid = await this.client.sendTransaction(txHex);
+        const txid = await this._executeWithRetry(async () => {
+          return await this.client.sendTransaction(txHex);
+        });
+        
+        logger.info(`Transaction sent: ${txid}`);
+        
+        // Invalidate the balance cache
+        this.balanceCache = null;
         
         return txid;
       }
       
       throw new Error(`Unsupported API provider: ${this.provider}`);
     } catch (error) {
+      logger.error(`Failed to send transaction: ${error.message}`);
       throw new Error(`Failed to send transaction: ${error.message}`);
     }
   }
@@ -652,15 +1003,34 @@ class ApiConnector extends BlockchainConnector {
    */
   async estimateFee(toAddress, amount, options = {}) {
     try {
-      const feeEstimates = await this.client.getFeeEstimates();
+      // Check if we have cached fee estimates that are still valid
+      const now = Date.now();
+      if (this.cacheEnabled && this.feeEstimatesCache !== null && now - this.feeEstimatesCacheTime < this.cacheExpiry) {
+        logger.debug(`Using cached fee estimates for ${this.blockchain}/${this.name}`);
+        const feeLevel = options.feeLevel || 'medium';
+        return this.feeEstimatesCache[feeLevel];
+      }
+      
+      // Get fee estimates from the API
+      const feeEstimates = await this._executeWithRetry(async () => {
+        return await this.client.getFeeEstimates();
+      });
+      
+      // Cache the fee estimates
+      if (this.cacheEnabled) {
+        this.feeEstimatesCache = feeEstimates;
+        this.feeEstimatesCacheTime = now;
+      }
       
       // Use the specified fee level or default to medium
       const feeLevel = options.feeLevel || 'medium';
       
+      logger.info(`Fee estimate for ${this.blockchain}/${this.name} (${feeLevel}): ${feeEstimates[feeLevel]}`);
+      
       return feeEstimates[feeLevel];
     } catch (error) {
       // If fee estimation fails, return a default fee
-      console.warn(`Failed to estimate fee: ${error.message}. Using default fee.`);
+      logger.warn(`Failed to estimate fee: ${error.message}. Using default fee.`);
       return 0.0001; // Default fee
     }
   }
@@ -671,19 +1041,41 @@ class ApiConnector extends BlockchainConnector {
    */
   async getBlockchainHeight() {
     try {
-      const info = await this.client.getBlockchainInfo();
-      
-      // Different APIs return blockchain height in different formats
-      if (this.provider === 'blockCypher') {
-        return info.height;
-      } else if (this.provider === 'blockstream') {
-        return info.height;
-      } else if (this.provider === 'blockchair') {
-        return info.blocks;
+      // Check if we have cached blockchain info that's still valid
+      const now = Date.now();
+      if (this.cacheEnabled && this.blockchainInfoCache !== null && now - this.blockchainInfoCacheTime < this.cacheExpiry) {
+        logger.debug(`Using cached blockchain info for ${this.blockchain}/${this.name}`);
+        return this.blockchainInfoCache;
       }
       
-      throw new Error(`Unsupported API provider: ${this.provider}`);
+      // Get blockchain info from the API
+      const info = await this._executeWithRetry(async () => {
+        return await this.client.getBlockchainInfo();
+      });
+      
+      // Different APIs return blockchain height in different formats
+      let height;
+      if (this.provider === 'blockCypher') {
+        height = info.height;
+      } else if (this.provider === 'blockstream') {
+        height = info.height;
+      } else if (this.provider === 'blockchair') {
+        height = info.blocks;
+      } else {
+        throw new Error(`Unsupported API provider: ${this.provider}`);
+      }
+      
+      // Cache the blockchain height
+      if (this.cacheEnabled) {
+        this.blockchainInfoCache = height;
+        this.blockchainInfoCacheTime = now;
+      }
+      
+      logger.info(`Blockchain height for ${this.blockchain}/${this.name}: ${height}`);
+      
+      return height;
     } catch (error) {
+      logger.error(`Failed to get blockchain height: ${error.message}`);
       throw new Error(`Failed to get blockchain height: ${error.message}`);
     }
   }
@@ -695,8 +1087,27 @@ class ApiConnector extends BlockchainConnector {
    */
   async getTransaction(txid) {
     try {
-      return await this.client.getTransaction(txid);
+      // Check if we have the transaction in the cache
+      if (this.cacheEnabled && this.transactionCache.has(txid)) {
+        logger.debug(`Using cached transaction ${txid} for ${this.blockchain}/${this.name}`);
+        return this.transactionCache.get(txid);
+      }
+      
+      // Get the transaction from the API
+      const tx = await this._executeWithRetry(async () => {
+        return await this.client.getTransaction(txid);
+      });
+      
+      // Cache the transaction
+      if (this.cacheEnabled) {
+        this.transactionCache.set(txid, tx);
+      }
+      
+      logger.info(`Retrieved transaction ${txid} for ${this.blockchain}/${this.name}`);
+      
+      return tx;
     } catch (error) {
+      logger.error(`Failed to get transaction: ${error.message}`);
       throw new Error(`Failed to get transaction: ${error.message}`);
     }
   }
@@ -707,8 +1118,15 @@ class ApiConnector extends BlockchainConnector {
    */
   async verifyUtxoWallet() {
     try {
-      return await this.client.verifyUtxoWallet();
+      const result = await this._executeWithRetry(async () => {
+        return await this.client.verifyUtxoWallet();
+      });
+      
+      logger.info(`UTXO wallet verification for ${this.blockchain}/${this.name}: ${result}`);
+      
+      return result;
     } catch (error) {
+      logger.error(`Failed to verify UTXO wallet: ${error.message}`);
       throw new Error(`Failed to verify UTXO wallet: ${error.message}`);
     }
   }
