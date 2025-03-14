@@ -390,6 +390,108 @@ class FractaLedgerContract extends Contract {
     return internalWallet;
   }
   
+  /**
+   * Record a balance discrepancy
+   * @param {Context} ctx The transaction context
+   * @param {string} blockchain The blockchain type
+   * @param {string} primaryWalletName The primary wallet name
+   * @param {string} onChainBalance The on-chain balance
+   * @param {string} aggregateInternalBalance The aggregate internal balance
+   * @param {string} difference The difference between the balances
+   * @returns {Object} The recorded discrepancy
+   */
+  async recordBalanceDiscrepancy(ctx, blockchain, primaryWalletName, onChainBalance, aggregateInternalBalance, difference) {
+    console.info('============= START : Record Balance Discrepancy ===========');
+    
+    // Create a discrepancy record
+    const discrepancyId = ctx.stub.getTxID();
+    const discrepancy = {
+      id: discrepancyId,
+      blockchain,
+      primaryWalletName,
+      onChainBalance: parseFloat(onChainBalance),
+      aggregateInternalBalance: parseFloat(aggregateInternalBalance),
+      difference: parseFloat(difference),
+      timestamp: new Date().toISOString(),
+      resolved: false
+    };
+    
+    // Store the discrepancy record on the ledger
+    await ctx.stub.putState(`DISCREPANCY_${discrepancyId}`, Buffer.from(JSON.stringify(discrepancy)));
+    
+    console.info('============= END : Record Balance Discrepancy ===========');
+    
+    return discrepancy;
+  }
+  
+  /**
+   * Get all balance discrepancies
+   * @param {Context} ctx The transaction context
+   * @param {string} resolved Optional filter for resolved status
+   * @returns {Array} All balance discrepancies
+   */
+  async getBalanceDiscrepancies(ctx, resolved = null) {
+    console.info('============= START : Get Balance Discrepancies ===========');
+    
+    // Get all discrepancies from the ledger
+    const startKey = 'DISCREPANCY_';
+    const endKey = 'DISCREPANCY_\uffff';
+    const iterator = await ctx.stub.getStateByRange(startKey, endKey);
+    
+    const discrepancies = [];
+    
+    let result = await iterator.next();
+    while (!result.done) {
+      const value = result.value.value.toString('utf8');
+      if (value) {
+        const discrepancy = JSON.parse(value);
+        
+        // Filter by resolved status if provided
+        if (resolved === null || discrepancy.resolved === (resolved === 'true')) {
+          discrepancies.push(discrepancy);
+        }
+      }
+      result = await iterator.next();
+    }
+    
+    await iterator.close();
+    
+    console.info('============= END : Get Balance Discrepancies ===========');
+    
+    return discrepancies;
+  }
+  
+  /**
+   * Resolve a balance discrepancy
+   * @param {Context} ctx The transaction context
+   * @param {string} discrepancyId The discrepancy ID
+   * @param {string} resolution The resolution description
+   * @returns {Object} The updated discrepancy
+   */
+  async resolveBalanceDiscrepancy(ctx, discrepancyId, resolution) {
+    console.info('============= START : Resolve Balance Discrepancy ===========');
+    
+    // Get the discrepancy from the ledger
+    const discrepancyAsBytes = await ctx.stub.getState(`DISCREPANCY_${discrepancyId}`);
+    if (!discrepancyAsBytes || discrepancyAsBytes.length === 0) {
+      throw new Error(`Discrepancy ${discrepancyId} does not exist`);
+    }
+    
+    const discrepancy = JSON.parse(discrepancyAsBytes.toString());
+    
+    // Update the discrepancy
+    discrepancy.resolved = true;
+    discrepancy.resolution = resolution;
+    discrepancy.resolvedAt = new Date().toISOString();
+    
+    // Store the updated discrepancy on the ledger
+    await ctx.stub.putState(`DISCREPANCY_${discrepancyId}`, Buffer.from(JSON.stringify(discrepancy)));
+    
+    console.info('============= END : Resolve Balance Discrepancy ===========');
+    
+    return discrepancy;
+  }
+  
   // Add your custom chaincode functions here
   
   /**

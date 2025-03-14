@@ -9,6 +9,7 @@ const { initializeBlockchainConnectors, monitorConnectorHealth, stopHealthMonito
 const { initializeWalletManager } = require('./wallet/walletManager');
 const { initializeHyperledger } = require('./hyperledger/fabricManager');
 const { initializeChaincodeManager } = require('./chaincode/chaincodeManager');
+const { initializeBalanceReconciliation } = require('./reconciliation/balanceReconciliation');
 const { startApiServer } = require('./api/server');
 const winston = require('winston');
 
@@ -68,9 +69,13 @@ async function main() {
     logger.info('Initializing chaincode manager...');
     const chaincodeManager = await initializeChaincodeManager(config, fabricClient);
     
+    // Initialize balance reconciliation module
+    logger.info('Initializing balance reconciliation module...');
+    const balanceReconciliation = await initializeBalanceReconciliation(config, walletManager, fabricClient);
+    
     // Start API server
     logger.info('Starting API server...');
-    await startApiServer(config, blockchainConnectors, walletManager, fabricClient, chaincodeManager);
+    await startApiServer(config, blockchainConnectors, walletManager, fabricClient, chaincodeManager, balanceReconciliation);
     
     // Start health monitoring for blockchain connectors
     logger.info('Starting health monitoring for blockchain connectors...');

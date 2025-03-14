@@ -2,15 +2,27 @@
   "name": "fractaledger",
   "version": "0.1.0",
   "description": "A configurable off-chain UTXO management system that enables fractional ownership, secure fund distribution, and seamless on-chain interactions across multiple blockchains.",
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "jest",
     "lint": "eslint src/**/*.js",
     "format": "prettier --write \"src/**/*.js\"",
-    "build": "mkdir -p dist && cp -r src package.json README.md LICENSE dist/"
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "build": "mkdir -p dist && cp -r src transceivers fractaledger-template.json README.md LICENSE dist/ && mkdir -p dist/bin && cp -r bin/* dist/bin/ && chmod +x dist/bin/*.js",
+    "prepublishOnly": "npm run build"
   },
+  "bin": {
+    "fractaledger-init": "./dist/bin/init.js",
+    "fractaledger-generate-transceiver": "./dist/bin/generate-transceiver.js",
+    "fractaledger-generate-config": "./dist/bin/generate-config.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
   "keywords": [
     "blockchain",
     "utxo",

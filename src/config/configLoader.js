@@ -10,15 +10,24 @@ const dotenv = require('dotenv');
 const Joi = require('joi');
 
 /**
- * Load configuration from config.json and environment variables
+ * Load configuration from fractaledger.json or config.json and environment variables
  * @returns {Object} The loaded and validated configuration
  */
 async function loadConfig() {
   try {
-    // Load configuration from config.json
-    const configPath = path.resolve(process.cwd(), 'config.json');
+    // Try to load configuration from fractaledger.json first
+    let configPath = path.resolve(process.cwd(), 'fractaledger.json');
+    
+    // If fractaledger.json doesn't exist, fall back to config.json for backward compatibility
     if (!fs.existsSync(configPath)) {
-      throw new Error(`Configuration file not found: ${configPath}`);
+      configPath = path.resolve(process.cwd(), 'config.json');
+      
+      // If neither file exists, throw an error
+      if (!fs.existsSync(configPath)) {
+        throw new Error(`Configuration file not found. Please create either fractaledger.json or config.json in your project root.`);
+      }
+      
+      console.log('Using config.json for configuration (deprecated). Consider migrating to fractaledger.json.');
     }
     
     const configJson = fs.readFileSync(configPath, 'utf8');

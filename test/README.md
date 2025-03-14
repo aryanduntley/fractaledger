@@ -31,6 +31,14 @@ FractaLedger uses a multi-layered testing approach:
 
 - **end-to-end.test.js**: Tests complete workflows from wallet registration to transaction processing
 
+### New Features Tests
+
+- **internal-transfers.test.js**: Tests the functionality of internal wallet transfers
+- **base-wallet-protection.test.js**: Tests the base wallet protection mechanisms
+- **balance-reconciliation.test.js**: Tests the balance reconciliation system
+- **api-messaging.test.js**: Tests the API messaging system
+- **new-features-integration.test.js**: Tests the integration of all new features
+
 ## Running Tests
 
 ### Using the Test Runner Script
@@ -55,6 +63,9 @@ The `run-all-tests.sh` script provides a convenient way to run tests:
 
 # Run end-to-end tests
 ./run-all-tests.sh e2e
+
+# Run new features tests
+./run-all-tests.sh new-features
 
 # Run a specific test file
 ./run-all-tests.sh wallet-manager.test.js

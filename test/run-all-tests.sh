@@ -57,6 +57,12 @@ run_e2e_tests() {
   npm test -- end-to-end.test.js
 }
 
+# Run new features tests
+run_new_features_tests() {
+  print_message "Running new features tests..."
+  npm test -- internal-transfers.test.js base-wallet-protection.test.js balance-reconciliation.test.js api-messaging.test.js new-features-integration.test.js
+}
+
 # Display help
 show_help() {
   echo "FractaLedger Test Runner"
@@ -68,12 +74,14 @@ show_help() {
   echo "  chaincode          Run chaincode tests"
   echo "  api                Run API tests"
   echo "  e2e                Run end-to-end tests"
+  echo "  new-features       Run new features tests"
   echo "  <test-file>        Run a specific test file"
   echo "  help               Show this help message"
   echo ""
   echo "Examples:"
   echo "  $0 all             Run all tests"
   echo "  $0 component       Run component tests"
+  echo "  $0 new-features    Run new features tests"
   echo "  $0 wallet-manager.test.js  Run wallet manager tests"
 }
 
@@ -100,6 +108,9 @@ main() {
         ;;
       e2e)
         run_e2e_tests
+        ;;
+      new-features)
+        run_new_features_tests
         ;;
       help)
         show_help

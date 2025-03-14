@@ -1,8 +1,28 @@
+# Test files
 test/
 __tests__/
 spec/
 coverage/
+
+# Development files
 node_modules/
 .git/
 .github/
 .env
+.env.*
+*.log
+logs/*
+!logs/README.md
+
+# Documentation and planning files
+docs/
+*.md
+!README.md
+!CHANGELOG.md
+!LICENSE.md
+!transceivers/README.md
+
+# Do NOT ignore these directories and files
+!bin/
+!transceivers/
+!fractaledger-template.json

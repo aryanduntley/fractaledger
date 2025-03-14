@@ -8,6 +8,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const jwt = require('jsonwebtoken');
+const { MessageType, MessageCode, createMessageManager } = require('./messaging');
 
 /**
  * Start the API server
@@ -16,9 +17,10 @@ const jwt = require('jsonwebtoken');
  * @param {Object} walletManager The wallet manager
  * @param {Object} fabricClient The Fabric client
  * @param {Object} chaincodeManager The chaincode manager
+ * @param {Object} balanceReconciliation The balance reconciliation module
  * @returns {Object} The Express app
  */
-async function startApiServer(config, blockchainConnectors, walletManager, fabricClient, chaincodeManager) {
+async function startApiServer(config, blockchainConnectors, walletManager, fabricClient, chaincodeManager, balanceReconciliation) {
   try {
     const app = express();
     
@@ -92,6 +94,48 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
         res.json({
           ...wallet,
           balance
+        });
+      } catch (error) {
+        res.status(404).json({ error: error.message });
+      }
+    });
+    
+    app.get('/api/wallets/:blockchain/:name/read-only', authenticateJWT, async (req, res) => {
+      try {
+        const { blockchain, name } = req.params;
+        const wallet = walletManager.getWallet(blockchain, name);
+        const balance = await wallet.getBalance();
+        
+        // Get all internal wallets for this primary wallet
+        const internalWallets = await walletManager.getAllInternalWallets();
+        const relatedWallets = internalWallets.filter(
+          w => w.blockchain === blockchain && w.primaryWalletName === name
+        );
+        
+        // Calculate aggregate internal balance
+        const aggregateInternalBalance = relatedWallets.reduce(
+          (sum, wallet) => sum + wallet.balance, 
+          0
+        );
+        
+        // Calculate excess balance
+        const excessBalance = Math.max(0, balance - aggregateInternalBalance);
+        
+        // Find the base internal wallet for this primary wallet
+        const baseWalletPrefix = config.baseInternalWallet.namePrefix;
+        const baseInternalWallet = relatedWallets.find(
+          w => w.id.startsWith(baseWalletPrefix + blockchain + '_' + name)
+        );
+        
+        res.json({
+          blockchain,
+          name,
+          address: wallet.walletAddress,
+          connectionType: wallet.connectionType,
+          balance,
+          aggregateInternalBalance,
+          excessBalance,
+          baseInternalWalletId: baseInternalWallet ? baseInternalWallet.id : null
         });
       } catch (error) {
         res.status(404).json({ error: error.message });
@@ -190,6 +234,133 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
     });
     
     // Transactions
+    app.post('/api/transactions/internal-transfer', authenticateJWT, async (req, res) => {
+      try {
+        const messageManager = createMessageManager();
+        const { fromInternalWalletId, toInternalWalletId, amount, memo } = req.body;
+        
+        if (!fromInternalWalletId || !toInternalWalletId || !amount) {
+          messageManager.addError(
+            MessageCode.ERROR_INVALID_PARAMETERS,
+            'Missing required parameters'
+          );
+          return res.status(400).json(messageManager.createResponse({ success: false }));
+        }
+        
+        // Get the internal wallets
+        const fromInternalWallet = await walletManager.getInternalWallet(fromInternalWalletId);
+        const toInternalWallet = await walletManager.getInternalWallet(toInternalWalletId);
+        
+        if (!fromInternalWallet) {
+          messageManager.addError(
+            MessageCode.ERROR_WALLET_NOT_FOUND,
+            'Source internal wallet not found',
+            { walletId: fromInternalWalletId }
+          );
+          return res.status(404).json(messageManager.createResponse({ success: false }));
+        }
+        
+        if (!toInternalWallet) {
+          messageManager.addError(
+            MessageCode.ERROR_WALLET_NOT_FOUND,
+            'Destination internal wallet not found',
+            { walletId: toInternalWalletId }
+          );
+          return res.status(404).json(messageManager.createResponse({ success: false }));
+        }
+        
+        // Ensure both wallets are on the same network (mapped to the same primary wallet)
+        if (fromInternalWallet.blockchain !== toInternalWallet.blockchain || 
+            fromInternalWallet.primaryWalletName !== toInternalWallet.primaryWalletName) {
+          messageManager.addError(
+            MessageCode.ERROR_INVALID_PARAMETERS,
+            'Internal transfers are only allowed between wallets on the same network and primary wallet',
+            {
+              fromWalletBlockchain: fromInternalWallet.blockchain,
+              fromWalletPrimaryName: fromInternalWallet.primaryWalletName,
+              toWalletBlockchain: toInternalWallet.blockchain,
+              toWalletPrimaryName: toInternalWallet.primaryWalletName
+            }
+          );
+          return res.status(400).json(messageManager.createResponse({ success: false }));
+        }
+        
+        // Check if the source wallet has enough balance
+        if (fromInternalWallet.balance < amount) {
+          messageManager.addError(
+            MessageCode.ERROR_INSUFFICIENT_BALANCE,
+            'Insufficient balance in source wallet',
+            {
+              walletId: fromInternalWalletId,
+              balance: fromInternalWallet.balance,
+              requiredAmount: amount
+            }
+          );
+          return res.status(400).json(messageManager.createResponse({ success: false }));
+        }
+        
+        // Submit the transfer transaction to the Fabric network
+        const result = await fabricClient.submitTransaction(
+          'transferBetweenInternalWallets', 
+          fromInternalWalletId, 
+          toInternalWalletId, 
+          amount.toString()
+        );
+        
+        const transfer = JSON.parse(result.toString());
+        
+        // Add memo if provided
+        if (memo) {
+          transfer.memo = memo;
+        }
+        
+        // Add success message
+        messageManager.addInfo(
+          MessageCode.INFO_TRANSACTION_PROCESSED,
+          'Internal transfer processed successfully',
+          {
+            fromWalletId: fromInternalWalletId,
+            toWalletId: toInternalWalletId,
+            amount
+          }
+        );
+        
+        // Check if the primary wallet balance is low
+        const primaryWallet = walletManager.getWallet(fromInternalWallet.blockchain, fromInternalWallet.primaryWalletName);
+        const primaryWalletBalance = await primaryWallet.getBalance();
+        
+        // Get all internal wallets for this primary wallet
+        const internalWallets = await walletManager.getInternalWalletsByPrimaryWallet(
+          fromInternalWallet.blockchain, 
+          fromInternalWallet.primaryWalletName
+        );
+        
+        // Calculate aggregate internal balance
+        const aggregateInternalBalance = internalWallets.reduce(
+          (sum, wallet) => sum + wallet.balance, 
+          0
+        );
+        
+        // If the primary wallet balance is less than 110% of the aggregate internal balance, add a warning
+        if (primaryWalletBalance < aggregateInternalBalance * 1.1) {
+          messageManager.addWarning(
+            MessageCode.WARN_PRIMARY_WALLET_BALANCE_LOW,
+            'Primary wallet balance is low',
+            {
+              blockchain: fromInternalWallet.blockchain,
+              primaryWalletName: fromInternalWallet.primaryWalletName,
+              primaryWalletBalance,
+              aggregateInternalBalance
+            }
+          );
+        }
+        
+        res.json(messageManager.createResponse({ success: true, transfer }));
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
     app.post('/api/transactions/withdraw', authenticateJWT, async (req, res) => {
       try {
         const { internalWalletId, toAddress, amount } = req.body;
@@ -214,6 +385,35 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
         // Check if the internal wallet has enough balance
         if (internalWallet.balance < amount + fee) {
           return res.status(400).json({ error: 'Insufficient balance' });
+        }
+        
+        // Check if the withdrawal is from a base internal wallet
+        const isBaseWallet = internalWallet.metadata && internalWallet.metadata.isBaseWallet;
+        
+        if (!isBaseWallet) {
+          // For regular internal wallets, check if the primary wallet has enough balance
+          const primaryWalletBalance = await primaryWallet.getBalance();
+          
+          // Get all internal wallets for this primary wallet
+          const internalWallets = await walletManager.getInternalWalletsByPrimaryWallet(
+            internalWallet.blockchain, 
+            internalWallet.primaryWalletName
+          );
+          
+          // Calculate aggregate internal balance
+          const aggregateInternalBalance = internalWallets.reduce(
+            (sum, wallet) => sum + wallet.balance, 
+            0
+          );
+          
+          // Check if the primary wallet has enough balance to cover all internal wallets
+          if (primaryWalletBalance < aggregateInternalBalance) {
+            return res.status(400).json({ 
+              error: 'Primary wallet balance is less than aggregate internal wallet balances',
+              primaryWalletBalance,
+              aggregateInternalBalance
+            });
+          }
         }
         
         // Submit the withdrawal transaction to the Fabric network
@@ -344,6 +544,73 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
         const { id } = req.params;
         const result = await chaincodeManager.installDependencies(id);
         res.json(result);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    // Balance reconciliation
+    app.get('/api/reconciliation/config', authenticateJWT, (req, res) => {
+      try {
+        const config = balanceReconciliation.getConfig();
+        res.json(config);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    app.post('/api/reconciliation/wallet/:blockchain/:name', authenticateJWT, async (req, res) => {
+      try {
+        const { blockchain, name } = req.params;
+        
+        // Reconcile the wallet
+        const result = await balanceReconciliation.reconcileWallet(blockchain, name);
+        
+        res.json(result);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    app.post('/api/reconciliation/all', authenticateJWT, async (req, res) => {
+      try {
+        // Perform full reconciliation
+        const results = await balanceReconciliation.performFullReconciliation();
+        
+        res.json(results);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    app.get('/api/reconciliation/discrepancies', authenticateJWT, async (req, res) => {
+      try {
+        const { resolved } = req.query;
+        
+        // Get all discrepancies
+        const result = await fabricClient.evaluateTransaction('getBalanceDiscrepancies', resolved || null);
+        const discrepancies = JSON.parse(result.toString());
+        
+        res.json(discrepancies);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    app.post('/api/reconciliation/discrepancies/:id/resolve', authenticateJWT, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { resolution } = req.body;
+        
+        if (!resolution) {
+          return res.status(400).json({ error: 'Missing required parameters' });
+        }
+        
+        // Resolve the discrepancy
+        const result = await fabricClient.submitTransaction('resolveBalanceDiscrepancy', id, resolution);
+        const resolvedDiscrepancy = JSON.parse(result.toString());
+        
+        res.json(resolvedDiscrepancy);
       } catch (error) {
         res.status(500).json({ error: error.message });
       }

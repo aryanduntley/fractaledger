@@ -2,13 +2,11 @@
  * Blockchain Connector Manager
  * 
  * This module initializes and manages blockchain connectors based on the configuration.
- * It includes connection pooling, health monitoring, and automatic failover.
+ * It focuses on transaction creation and signing, delegating the blockchain interaction
+ * responsibility to the user's environment through the TransceiverManager.
  */
 
 const { BlockchainConnector } = require('./blockchainConnector');
-const { FullNodeConnector } = require('./connectors/fullNodeConnector');
-const { SpvConnector } = require('./connectors/spvConnector');
-const { ApiConnector } = require('./connectors/apiConnector');
 const winston = require('winston');
 
 // Configure logger
@@ -36,7 +34,7 @@ const logger = winston.createLogger({
  * @param {Object} config The configuration object
  * @returns {Object} An object containing initialized blockchain connectors
  */
-async function initializeBlockchainConnectors(config) {
+function initializeBlockchainConnectors(config) {
   logger.info('Initializing blockchain connectors');
   
   try {
@@ -73,9 +71,32 @@ async function initializeBlockchainConnectors(config) {
       }
     }
     
-    // Test connections
-    logger.info('Testing connections to all blockchain connectors');
-    await testConnections(connectors);
+    // Initialize any other UTXO-based blockchain connectors
+    const otherBlockchains = Object.keys(config).filter(key => 
+      key !== 'bitcoin' && 
+      key !== 'litecoin' && 
+      key !== 'dogecoin' && 
+      key !== 'hyperledger' && 
+      key !== 'api' && 
+      key !== 'logging' && 
+      key !== 'monitoring' && 
+      key !== 'smartContract' && 
+      key !== 'baseInternalWallet' && 
+      key !== 'balanceReconciliation' && 
+      key !== 'environment' && 
+      key !== 'broadcasting'
+    );
+    
+    for (const blockchain of otherBlockchains) {
+      if (Array.isArray(config[blockchain])) {
+        logger.info(`Initializing ${config[blockchain].length} ${blockchain} connectors`);
+        connectors[blockchain] = {};
+        for (const walletConfig of config[blockchain]) {
+          logger.debug(`Creating ${blockchain} connector: ${walletConfig.name}`);
+          connectors[blockchain][walletConfig.name] = createConnector(blockchain, walletConfig);
+        }
+      }
+    }
     
     logger.info('All blockchain connectors initialized successfully');
     return connectors;
@@ -87,31 +108,31 @@ async function initializeBlockchainConnectors(config) {
 
 /**
  * Create a blockchain connector based on the wallet configuration
- * @param {string} blockchain The blockchain type (bitcoin, litecoin, dogecoin)
+ * @param {string} blockchain The blockchain type (bitcoin, litecoin, dogecoin, etc.)
  * @param {Object} walletConfig The wallet configuration
  * @returns {BlockchainConnector} The created blockchain connector
  */
 function createConnector(blockchain, walletConfig) {
   try {
-    logger.debug(`Creating ${walletConfig.connectionType} connector for ${blockchain}/${walletConfig.name}`);
+    logger.debug(`Creating connector for ${blockchain}/${walletConfig.name}`);
     
-    let connector;
-    switch (walletConfig.connectionType) {
-      case 'fullNode':
-        connector = new FullNodeConnector(blockchain, walletConfig);
-        break;
-      case 'spv':
-        connector = new SpvConnector(blockchain, walletConfig);
-        break;
-      case 'api':
-        connector = new ApiConnector(blockchain, walletConfig);
-        break;
-      default:
-        logger.error(`Unsupported connection type: ${walletConfig.connectionType}`);
-        throw new Error(`Unsupported connection type: ${walletConfig.connectionType}`);
+    // Get the secret from environment variables if specified
+    if (walletConfig.secretEnvVar) {
+      walletConfig.secret = process.env[walletConfig.secretEnvVar];
+      if (!walletConfig.secret) {
+        throw new Error(`Environment variable ${walletConfig.secretEnvVar} not found`);
+      }
     }
     
-    logger.debug(`Successfully created ${walletConfig.connectionType} connector for ${blockchain}/${walletConfig.name}`);
+    // Convert broadcasting config to transceiver config if needed
+    if (walletConfig.broadcasting && !walletConfig.transceiver) {
+      walletConfig.transceiver = walletConfig.broadcasting;
+    }
+    
+    // Create a new blockchain connector
+    const connector = new BlockchainConnector(blockchain, walletConfig);
+    
+    logger.debug(`Successfully created connector for ${blockchain}/${walletConfig.name}`);
     return connector;
   } catch (error) {
     logger.error(`Failed to create connector for ${blockchain}/${walletConfig.name}: ${error.message}`, { error });
@@ -120,182 +141,155 @@ function createConnector(blockchain, walletConfig) {
 }
 
 /**
- * Test connections to all blockchain connectors
+ * Register event listeners for all blockchain connectors
  * @param {Object} connectors The blockchain connectors
+ * @param {Object} eventHandlers The event handlers
  */
-async function testConnections(connectors) {
-  const connectionPromises = [];
-  const results = { success: 0, failed: 0 };
-  
-  // Test Bitcoin connectors
-  for (const [name, connector] of Object.entries(connectors.bitcoin)) {
-    logger.debug(`Testing connection to Bitcoin connector ${name}`);
-    connectionPromises.push(
-      connector.testConnection()
-        .then(() => {
-          logger.info(`Successfully connected to Bitcoin connector ${name}`);
-          results.success++;
-        })
-        .catch(error => {
-          logger.error(`Failed to connect to Bitcoin connector ${name}: ${error.message}`, { error });
-          results.failed++;
-          throw new Error(`Failed to connect to Bitcoin connector ${name}: ${error.message}`);
-        })
-    );
-  }
-  
-  // Test Litecoin connectors
-  for (const [name, connector] of Object.entries(connectors.litecoin)) {
-    logger.debug(`Testing connection to Litecoin connector ${name}`);
-    connectionPromises.push(
-      connector.testConnection()
-        .then(() => {
-          logger.info(`Successfully connected to Litecoin connector ${name}`);
-          results.success++;
-        })
-        .catch(error => {
-          logger.error(`Failed to connect to Litecoin connector ${name}: ${error.message}`, { error });
-          results.failed++;
-          throw new Error(`Failed to connect to Litecoin connector ${name}: ${error.message}`);
-        })
-    );
-  }
-  
-  // Test Dogecoin connectors
-  for (const [name, connector] of Object.entries(connectors.dogecoin)) {
-    logger.debug(`Testing connection to Dogecoin connector ${name}`);
-    connectionPromises.push(
-      connector.testConnection()
-        .then(() => {
-          logger.info(`Successfully connected to Dogecoin connector ${name}`);
-          results.success++;
-        })
-        .catch(error => {
-          logger.error(`Failed to connect to Dogecoin connector ${name}: ${error.message}`, { error });
-          results.failed++;
-          throw new Error(`Failed to connect to Dogecoin connector ${name}: ${error.message}`);
-        })
-    );
-  }
+function registerEventListeners(connectors, eventHandlers) {
+  logger.info('Registering event listeners for blockchain connectors');
   
   try {
-    await Promise.all(connectionPromises);
-    logger.info(`All connections tested successfully: ${results.success} succeeded, ${results.failed} failed`);
-  } catch (error) {
-    logger.error(`Some connections failed: ${results.success} succeeded, ${results.failed} failed`);
-    throw error;
-  }
-}
-
-/**
- * Monitor the health of all blockchain connectors
- * @param {Object} connectors The blockchain connectors
- * @param {number} interval The monitoring interval in milliseconds
- * @returns {Object} The monitoring interval ID
- */
-function monitorConnectorHealth(connectors, interval = 60000) {
-  logger.info(`Starting health monitoring for blockchain connectors with interval ${interval}ms`);
-  
-  const monitoringInterval = setInterval(async () => {
-    logger.debug('Running health check for all blockchain connectors');
-    
-    try {
-      // Check Bitcoin connectors
-      for (const [name, connector] of Object.entries(connectors.bitcoin)) {
-        try {
-          const isHealthy = await connector.testConnection();
-          if (isHealthy) {
-            logger.debug(`Bitcoin connector ${name} is healthy`);
-          } else {
-            logger.warn(`Bitcoin connector ${name} is unhealthy`);
-          }
-        } catch (error) {
-          logger.error(`Health check failed for Bitcoin connector ${name}: ${error.message}`, { error });
+    // Register event listeners for all blockchain connectors
+    for (const blockchain of Object.keys(connectors)) {
+      for (const [name, connector] of Object.entries(connectors[blockchain])) {
+        logger.debug(`Registering event listeners for ${blockchain} connector ${name}`);
+        for (const [event, handler] of Object.entries(eventHandlers)) {
+          connector.on(event, handler);
         }
       }
-      
-      // Check Litecoin connectors
-      for (const [name, connector] of Object.entries(connectors.litecoin)) {
-        try {
-          const isHealthy = await connector.testConnection();
-          if (isHealthy) {
-            logger.debug(`Litecoin connector ${name} is healthy`);
-          } else {
-            logger.warn(`Litecoin connector ${name} is unhealthy`);
-          }
-        } catch (error) {
-          logger.error(`Health check failed for Litecoin connector ${name}: ${error.message}`, { error });
-        }
-      }
-      
-      // Check Dogecoin connectors
-      for (const [name, connector] of Object.entries(connectors.dogecoin)) {
-        try {
-          const isHealthy = await connector.testConnection();
-          if (isHealthy) {
-            logger.debug(`Dogecoin connector ${name} is healthy`);
-          } else {
-            logger.warn(`Dogecoin connector ${name} is unhealthy`);
-          }
-        } catch (error) {
-          logger.error(`Health check failed for Dogecoin connector ${name}: ${error.message}`, { error });
-        }
-      }
-      
-      logger.debug('Health check completed for all blockchain connectors');
-    } catch (error) {
-      logger.error(`Error during health monitoring: ${error.message}`, { error });
     }
-  }, interval);
-  
-  return monitoringInterval;
-}
-
-/**
- * Stop monitoring the health of blockchain connectors
- * @param {Object} monitoringInterval The monitoring interval ID
- */
-function stopHealthMonitoring(monitoringInterval) {
-  if (monitoringInterval) {
-    logger.info('Stopping health monitoring for blockchain connectors');
-    clearInterval(monitoringInterval);
+    
+    logger.info('Event listeners registered successfully');
+  } catch (error) {
+    logger.error(`Failed to register event listeners: ${error.message}`, { error });
+    throw new Error(`Failed to register event listeners: ${error.message}`);
   }
 }
 
 /**
- * Get a healthy connector for a specific blockchain
+ * Update the transceiver configuration for all blockchain connectors
  * @param {Object} connectors The blockchain connectors
- * @param {string} blockchain The blockchain type (bitcoin, litecoin, dogecoin)
- * @returns {BlockchainConnector} A healthy connector or null if none are available
+ * @param {Object} transceiverConfig The transceiver configuration
  */
-async function getHealthyConnector(connectors, blockchain) {
-  logger.debug(`Finding healthy connector for ${blockchain}`);
+function updateTransceiverConfig(connectors, transceiverConfig) {
+  logger.info('Updating transceiver configuration for blockchain connectors');
   
-  if (!connectors[blockchain] || Object.keys(connectors[blockchain]).length === 0) {
-    logger.warn(`No connectors available for ${blockchain}`);
+  try {
+    // Update transceiver configuration for all blockchain connectors
+    for (const blockchain of Object.keys(connectors)) {
+      for (const [name, connector] of Object.entries(connectors[blockchain])) {
+        logger.debug(`Updating transceiver configuration for ${blockchain} connector ${name}`);
+        connector.updateTransceiverConfig(transceiverConfig);
+      }
+    }
+    
+    logger.info('Transceiver configuration updated successfully');
+  } catch (error) {
+    logger.error(`Failed to update transceiver configuration: ${error.message}`, { error });
+    throw new Error(`Failed to update transceiver configuration: ${error.message}`);
+  }
+}
+
+/**
+ * Get all pending transactions from all blockchain connectors
+ * @param {Object} connectors The blockchain connectors
+ * @returns {Object} An object containing pending transactions for each blockchain
+ */
+function getAllPendingTransactions(connectors) {
+  logger.debug('Getting all pending transactions from blockchain connectors');
+  
+  try {
+    const pendingTransactions = {};
+    
+    // Get pending transactions from all blockchain connectors
+    for (const blockchain of Object.keys(connectors)) {
+      pendingTransactions[blockchain] = {};
+      for (const [name, connector] of Object.entries(connectors[blockchain])) {
+        pendingTransactions[blockchain][name] = connector.getAllPendingTransactions();
+      }
+    }
+    
+    return pendingTransactions;
+  } catch (error) {
+    logger.error(`Failed to get pending transactions: ${error.message}`, { error });
+    throw new Error(`Failed to get pending transactions: ${error.message}`);
+  }
+}
+
+/**
+ * Get all monitored addresses from all blockchain connectors
+ * @param {Object} connectors The blockchain connectors
+ * @returns {Object} An object containing monitored addresses for each blockchain
+ */
+function getAllMonitoredAddresses(connectors) {
+  logger.debug('Getting all monitored addresses from blockchain connectors');
+  
+  try {
+    const monitoredAddresses = {};
+    
+    // Get monitored addresses from all blockchain connectors
+    for (const blockchain of Object.keys(connectors)) {
+      monitoredAddresses[blockchain] = {};
+      for (const [name, connector] of Object.entries(connectors[blockchain])) {
+        monitoredAddresses[blockchain][name] = connector.getAllMonitoredAddresses();
+      }
+    }
+    
+    return monitoredAddresses;
+  } catch (error) {
+    logger.error(`Failed to get monitored addresses: ${error.message}`, { error });
+    throw new Error(`Failed to get monitored addresses: ${error.message}`);
+  }
+}
+
+/**
+ * Get a connector for a specific blockchain and wallet
+ * @param {Object} connectors The blockchain connectors
+ * @param {string} blockchain The blockchain type (bitcoin, litecoin, dogecoin, etc.)
+ * @param {string} walletName The wallet name
+ * @returns {BlockchainConnector} The connector or null if not found
+ */
+function getConnector(connectors, blockchain, walletName) {
+  logger.debug(`Getting connector for ${blockchain}/${walletName}`);
+  
+  if (!connectors[blockchain] || !connectors[blockchain][walletName]) {
+    logger.warn(`Connector not found for ${blockchain}/${walletName}`);
     return null;
   }
   
-  // Try to find a healthy connector
-  for (const [name, connector] of Object.entries(connectors[blockchain])) {
-    try {
-      const isHealthy = await connector.testConnection();
-      if (isHealthy) {
-        logger.debug(`Found healthy ${blockchain} connector: ${name}`);
-        return connector;
-      }
-    } catch (error) {
-      logger.warn(`Connector ${name} for ${blockchain} is unhealthy: ${error.message}`);
-    }
-  }
+  return connectors[blockchain][walletName];
+}
+
+/**
+ * Clean up resources used by all blockchain connectors
+ * @param {Object} connectors The blockchain connectors
+ * @returns {Promise<void>}
+ */
+async function cleanupConnectors(connectors) {
+  logger.info('Cleaning up blockchain connectors');
   
-  logger.error(`No healthy connectors available for ${blockchain}`);
-  return null;
+  try {
+    // Clean up all blockchain connectors
+    for (const blockchain of Object.keys(connectors)) {
+      for (const [name, connector] of Object.entries(connectors[blockchain])) {
+        logger.debug(`Cleaning up ${blockchain} connector ${name}`);
+        await connector.cleanup();
+      }
+    }
+    
+    logger.info('Blockchain connectors cleaned up successfully');
+  } catch (error) {
+    logger.error(`Failed to clean up blockchain connectors: ${error.message}`, { error });
+    throw new Error(`Failed to clean up blockchain connectors: ${error.message}`);
+  }
 }
 
 module.exports = {
   initializeBlockchainConnectors,
-  monitorConnectorHealth,
-  stopHealthMonitoring,
-  getHealthyConnector
+  registerEventListeners,
+  updateTransceiverConfig,
+  getAllPendingTransactions,
+  getAllMonitoredAddresses,
+  getConnector,
+  cleanupConnectors
 };

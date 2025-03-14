@@ -2,115 +2,97 @@
   "bitcoin": [
     {
       "name": "btc_wallet_1",
-      "connectionType": "spv",
-      "connectionDetails": {
-        "server": "localhost:50001",
-        "serverPool": ["localhost:50001", "electrum1.example.com:50001", "electrum2.example.com:50001"],
-        "network": "mainnet"
-      },
+      "network": "mainnet",
       "walletAddress": "bc1q...",
-      "secretEnvVar": "BTC_WALLET_1_SECRET"
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "callbackModule": "./transceivers/utxo-transceiver.js",
+        "monitoringInterval": 60000,
+        "autoMonitor": true
+      }
     },
     {
       "name": "btc_wallet_2",
-      "connectionType": "api",
-      "connectionDetails": {
-        "provider": "blockCypher",
-        "endpoint": "https://api.blockcypher.com/v1/btc/main",
-        "apiKeyEnvVar": "BLOCKCYPHER_API_KEY"
-      },
+      "network": "mainnet",
       "walletAddress": "bc1q...",
-      "secretEnvVar": "BTC_WALLET_2_SECRET"
+      "secretEnvVar": "BTC_WALLET_2_SECRET",
+      "transceiver": {
+        "method": "event"
+      }
     },
     {
       "name": "btc_wallet_3",
-      "connectionType": "fullNode",
-      "connectionDetails": {
-        "host": "localhost",
-        "port": 8332,
-        "username": "bitcoinrpc",
-        "password": "rpcpassword",
-        "protocol": "http",
-        "network": "mainnet"
-      },
+      "network": "mainnet",
       "walletAddress": "bc1q...",
-      "secretEnvVar": "BTC_WALLET_3_SECRET"
+      "secretEnvVar": "BTC_WALLET_3_SECRET",
+      "transceiver": {
+        "method": "api"
+      }
     }
   ],
   "litecoin": [
     {
       "name": "ltc_wallet_1",
-      "connectionType": "spv",
-      "connectionDetails": {
-        "server": "localhost:50002",
-        "serverPool": ["localhost:50002", "ltc1.electrum.example.com:50002", "ltc2.electrum.example.com:50002"],
-        "network": "mainnet"
-      },
+      "network": "mainnet",
       "walletAddress": "ltc1q...",
-      "secretEnvVar": "LTC_WALLET_1_SECRET"
+      "secretEnvVar": "LTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "callbackModule": "./transceivers/utxo-transceiver.js",
+        "monitoringInterval": 60000,
+        "autoMonitor": true
+      }
     },
     {
       "name": "ltc_wallet_2",
-      "connectionType": "api",
-      "connectionDetails": {
-        "provider": "blockCypher",
-        "endpoint": "https://api.blockcypher.com/v1/ltc/main",
-        "apiKeyEnvVar": "BLOCKCYPHER_API_KEY"
-      },
+      "network": "mainnet",
       "walletAddress": "ltc1q...",
-      "secretEnvVar": "LTC_WALLET_2_SECRET"
+      "secretEnvVar": "LTC_WALLET_2_SECRET",
+      "transceiver": {
+        "method": "event"
+      }
     },
     {
       "name": "ltc_wallet_3",
-      "connectionType": "fullNode",
-      "connectionDetails": {
-        "host": "localhost",
-        "port": 9332,
-        "username": "litecoinrpc",
-        "password": "rpcpassword",
-        "protocol": "http",
-        "network": "mainnet"
-      },
+      "network": "mainnet",
       "walletAddress": "ltc1q...",
-      "secretEnvVar": "LTC_WALLET_3_SECRET"
+      "secretEnvVar": "LTC_WALLET_3_SECRET",
+      "transceiver": {
+        "method": "api"
+      }
     }
   ],
   "dogecoin": [
     {
       "name": "doge_wallet_1",
-      "connectionType": "spv",
-      "connectionDetails": {
-        "server": "localhost:50003",
-        "serverPool": ["localhost:50003", "doge1.electrum.example.com:50003", "doge2.electrum.example.com:50003"],
-        "network": "mainnet"
-      },
+      "network": "mainnet",
       "walletAddress": "D...",
-      "secretEnvVar": "DOGE_WALLET_1_SECRET"
+      "secretEnvVar": "DOGE_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "callbackModule": "./transceivers/utxo-transceiver.js",
+        "monitoringInterval": 60000,
+        "autoMonitor": true
+      }
     },
     {
       "name": "doge_wallet_2",
-      "connectionType": "api",
-      "connectionDetails": {
-        "provider": "blockCypher",
-        "endpoint": "https://api.blockcypher.com/v1/doge/main",
-        "apiKeyEnvVar": "BLOCKCYPHER_API_KEY"
-      },
+      "network": "mainnet",
       "walletAddress": "D...",
-      "secretEnvVar": "DOGE_WALLET_2_SECRET"
+      "secretEnvVar": "DOGE_WALLET_2_SECRET",
+      "transceiver": {
+        "method": "event"
+      }
     },
     {
       "name": "doge_wallet_3",
-      "connectionType": "fullNode",
-      "connectionDetails": {
-        "host": "localhost",
-        "port": 22555,
-        "username": "dogecoinrpc",
-        "password": "rpcpassword",
-        "protocol": "http",
-        "network": "mainnet"
-      },
+      "network": "mainnet",
       "walletAddress": "D...",
-      "secretEnvVar": "DOGE_WALLET_3_SECRET"
+      "secretEnvVar": "DOGE_WALLET_3_SECRET",
+      "transceiver": {
+        "method": "api"
+      }
     }
   ],
   "hyperledger": {
@@ -156,6 +138,20 @@
     "rateLimiting": {
       "windowMs": 900000,
       "max": 100
+    },
+    "endpoints": {
+      "chaincodeManagement": {
+        "enabled": false,
+        "description": "When enabled, allows chaincode management via API endpoints. Default is false for security reasons."
+      },
+      "transactions": {
+        "enabled": true,
+        "description": "When enabled, provides API endpoints for retrieving and broadcasting transactions."
+      },
+      "monitoring": {
+        "enabled": true,
+        "description": "When enabled, provides API endpoints for monitoring wallet addresses and retrieving balance information."
+      }
     }
   },
   "logging": {
@@ -195,7 +191,26 @@
       "employeePayment": "./chaincode/templates/employee-payment"
     }
   },
+  "baseInternalWallet": {
+    "namePrefix": "base_wallet_",
+    "description": "Represents excess funds in the primary on-chain wallet",
+    "createOnInitialization": true
+  },
+  "balanceReconciliation": {
+    "strategy": "afterTransaction", 
+    "scheduledFrequency": 3600000,
+    "warningThreshold": 0.00001,
+    "strictMode": false
+  },
   "environment": {
     "envFilePath": "./.env"
+  },
+  "transceiver": {
+    "defaultMethod": "return",
+    "apiEndpoint": "/api/transactions",
+    "eventNamespace": "transactions",
+    "callbacksPath": "./transceivers",
+    "monitoringInterval": 60000,
+    "autoMonitor": false
   }
 }
