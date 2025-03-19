@@ -21,7 +21,8 @@
   },
   "files": [
     "dist",
-    "LICENSE"
+    "LICENSE",
+    "README.md"
   ],
   "keywords": [
     "blockchain",

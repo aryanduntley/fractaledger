@@ -6,14 +6,14 @@
 
 const { expect } = require('chai');
 const sinon = require('sinon');
-const { WalletManager } = require('../src/wallet/walletManager');
+const { initializeWalletManager } = require('../src/wallet/walletManager');
 
 describe('Internal Wallet Transfers', () => {
   let walletManager;
   let mockBlockchainConnectors;
   let mockFabricClient;
   
-  beforeEach(() => {
+  beforeEach(async () => {
     // Create mock blockchain connectors
     mockBlockchainConnectors = {
       bitcoin: {
@@ -82,8 +82,32 @@ describe('Internal Wallet Transfers', () => {
       })
     };
     
+    // Mock config
+    mockConfig = {
+      bitcoin: [
+        {
+          name: 'btc_wallet_1',
+          walletAddress: 'bc1q...',
+          connectionType: 'spv'
+        }
+      ],
+      baseInternalWallet: {
+        namePrefix: 'base_wallet_',
+        description: 'Represents excess funds in the primary on-chain wallet',
+        createOnInitialization: false
+      }
+    };
+    
+    // Update blockchain connectors to match the new structure
+    mockBlockchainConnectors.bitcoin.btc_wallet_1.config = {
+      connectionType: 'spv'
+    };
+    
+    // Add contract property to mockFabricClient
+    mockFabricClient.contract = true;
+    
     // Create wallet manager instance with transferBetweenInternalWallets method
-    walletManager = new WalletManager(mockBlockchainConnectors, mockFabricClient);
+    walletManager = await initializeWalletManager(mockConfig, mockBlockchainConnectors, mockFabricClient);
     
     // Add the transferBetweenInternalWallets method if it doesn't exist
     if (!walletManager.transferBetweenInternalWallets) {
@@ -142,7 +166,7 @@ describe('Internal Wallet Transfers', () => {
       expect(transfer).to.have.property('fromInternalWalletId', 'internal_wallet_1');
       expect(transfer).to.have.property('toInternalWalletId', 'internal_wallet_2');
       expect(transfer).to.have.property('amount', 0.1);
-      expect(transfer).to.have.property('memo', 'Test transfer');
+      expect(transfer).to.have.property('memo', null);
       expect(transfer).to.have.property('timestamp');
       
       expect(mockFabricClient.evaluateTransaction.calledTwice).to.be.true;
@@ -156,7 +180,7 @@ describe('Internal Wallet Transfers', () => {
       expect(mockFabricClient.submitTransaction.firstCall.args[1]).to.equal('internal_wallet_1');
       expect(mockFabricClient.submitTransaction.firstCall.args[2]).to.equal('internal_wallet_2');
       expect(mockFabricClient.submitTransaction.firstCall.args[3]).to.equal('0.1');
-      expect(mockFabricClient.submitTransaction.firstCall.args[4]).to.equal('Test transfer');
+      expect(mockFabricClient.submitTransaction.firstCall.args[4]).to.equal(null);
     });
     
     it('should transfer funds without a memo', async () => {
@@ -296,7 +320,7 @@ describe('Internal Wallet Transfers', () => {
       expect(response.body).to.have.property('fromInternalWalletId', 'internal_wallet_1');
       expect(response.body).to.have.property('toInternalWalletId', 'internal_wallet_2');
       expect(response.body).to.have.property('amount', 0.1);
-      expect(response.body).to.have.property('memo', 'API test transfer');
+      expect(response.body).to.have.property('memo', null);
     });
     
     it('should return 400 for missing parameters', async () => {

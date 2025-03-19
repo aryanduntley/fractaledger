@@ -41,6 +41,7 @@ const mockConfig = {
 const { startApiServer } = require('../src/api/server');
 
 describe('Wallet ID Uniqueness', () => {
+  let server;
   let app;
   let token;
   
@@ -213,13 +214,16 @@ describe('Wallet ID Uniqueness', () => {
     });
     
     // Start the API server with mock dependencies
-    app = await startApiServer(
+    const serverObj = await startApiServer(
       mockConfig,
       mockBlockchainConnectors,
       mockWalletManager,
       mockFabricClient,
       mockChaincodeManager
     );
+    
+    server = serverObj;
+    app = serverObj.app;
     
     // Generate a JWT token for authentication
     token = jwt.sign({ username: 'admin' }, mockConfig.api.auth.jwtSecret, {
@@ -231,6 +235,13 @@ describe('Wallet ID Uniqueness', () => {
     // Reset the mock stubs
     mockWalletManager.createInternalWallet.resetHistory();
     mockFabricClient.submitTransaction.resetHistory();
+  });
+  
+  afterAll(async () => {
+    // Close the server after all tests are done
+    if (server && server.close) {
+      await server.close();
+    }
   });
   
   describe('Internal Wallet ID Uniqueness', () => {

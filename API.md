@@ -123,6 +123,21 @@ Response:
 
 > **Note**: This endpoint provides read-only access to the primary wallet, including information about the aggregate balance of all internal wallets associated with this primary wallet, the excess balance (balance - aggregateInternalBalance), and the ID of the base internal wallet that represents this excess balance. This endpoint is particularly useful for monitoring the health of the system and ensuring that the primary wallet has sufficient funds to cover all internal wallets.
 
+### Base Internal Wallet
+
+The Base Internal Wallet is a special type of internal wallet that automatically tracks the excess funds in a primary on-chain wallet. It serves as a safety mechanism to prevent over-withdrawals and provides a clear view of the available funds that are not allocated to other internal wallets.
+
+Each primary wallet has an associated Base Internal Wallet with an ID format of `base_wallet_[blockchain]_[primaryWalletName]`. The balance of this wallet is automatically calculated as the difference between the on-chain balance of the primary wallet and the sum of all other internal wallets associated with that primary wallet.
+
+The Base Internal Wallet has the following special characteristics:
+
+1. **Automatic Balance Calculation**: Its balance is automatically calculated and updated during reconciliation processes.
+2. **No Direct Funding**: It cannot be directly funded through the `/api/internal-wallets/:id/fund` endpoint.
+3. **No Internal Transfers**: It cannot be used as a source or destination for internal transfers.
+4. **Withdrawal Only**: It can only be used for withdrawal requests to external addresses.
+
+For more detailed information about the Base Internal Wallet, see the [Base Internal Wallet documentation](docs/BaseInternalWallet.md).
+
 ### Get Wallet Transactions
 
 ```
@@ -786,6 +801,122 @@ Response:
   "timestamp": "2025-03-12T12:00:00Z"
 }
 ```
+
+## API Extensions
+
+FractaLedger supports API extensions, which allow you to add custom endpoints to the API server without modifying the core code. This is useful for adding domain-specific functionality to your FractaLedger instance.
+
+### Using API Extensions
+
+To use an API extension, you need to:
+
+1. Create an extension file that exports a function that takes an Express app instance, authentication middleware, and dependencies
+2. Register the extension with the API server
+
+Example:
+
+```javascript
+// my-extension.js
+function registerMyExtension(app, authenticateJWT, dependencies) {
+  const { walletManager, fabricClient } = dependencies;
+  
+  app.get('/api/my-custom-endpoint', authenticateJWT, async (req, res) => {
+    try {
+      // Your endpoint logic here
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
+
+module.exports = registerMyExtension;
+```
+
+Then, in your application:
+
+```javascript
+const { startApiServer } = require('fractaledger');
+const myExtension = require('./my-extension');
+
+// Start the API server
+const serverObj = await startApiServer(config, blockchainConnectors, walletManager, fabricClient, chaincodeManager);
+
+// Register the extension
+serverObj.registerExtension(myExtension);
+```
+
+### Available Extensions
+
+FractaLedger comes with several pre-built extensions that you can use as-is or as templates for your own extensions:
+
+#### Merchant Fee Extension
+
+The merchant-fee-extension.js file adds endpoints for managing merchant fees and processing merchant transactions. This extension is designed to work with the merchant-fee chaincode template.
+
+Endpoints:
+- `POST /api/fee-config` - Create or update fee configuration
+- `GET /api/fee-config` - Get fee configuration
+- `POST /api/internal-wallets/:id/fund` - Fund an internal wallet
+- `POST /api/transactions/merchant` - Process a merchant transaction
+
+#### Employee Payroll Extension
+
+The employee-payroll-extension.js file adds endpoints for managing employees and processing payroll. This extension is designed to work with the employee-payroll chaincode template.
+
+Endpoints:
+- `POST /api/employees` - Register a new employee
+- `GET /api/employees` - Get all employees
+- `GET /api/employees/:id` - Get an employee
+- `PUT /api/employees/:id` - Update an employee
+- `POST /api/employees/:id/deactivate` - Deactivate an employee
+- `POST /api/internal-wallets/:id/fund` - Fund an internal wallet
+- `POST /api/payroll/process` - Process payroll
+- `POST /api/payroll/individual-payment` - Process individual payment
+- `GET /api/employees/:id/payment-history` - Get employee payment history
+
+### Creating Your Own Extensions
+
+You can create your own extensions by following these steps:
+
+1. Create a new JavaScript file in your project directory
+2. Define a function that takes an Express app instance, authentication middleware, and dependencies
+3. Add your custom routes to the app
+4. Export the function
+
+Example:
+
+```javascript
+function registerMyExtension(app, authenticateJWT, dependencies) {
+  const { walletManager, fabricClient } = dependencies;
+  
+  app.post('/api/my-custom-endpoint', authenticateJWT, async (req, res) => {
+    try {
+      // Your endpoint logic here
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
+
+module.exports = registerMyExtension;
+```
+
+### Generating API Extensions
+
+FractaLedger provides a CLI tool to generate API extensions based on templates:
+
+```bash
+node bin/generate-api-extension.js --type basic --output ./my-extensions --name my-custom-extension
+```
+
+This will generate a new extension file based on the specified template.
+
+Available templates:
+- `basic`: A basic API extension template with a single endpoint
+- `merchant-fee`: API extension for merchant fee collection
+- `employee-payroll`: API extension for employee payroll management
 
 ## Error Handling
 

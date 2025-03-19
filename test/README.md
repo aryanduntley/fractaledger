@@ -30,6 +30,8 @@ FractaLedger uses a multi-layered testing approach:
 ### End-to-End Tests
 
 - **end-to-end.test.js**: Tests complete workflows from wallet registration to transaction processing
+- **end-to-end-merchant-fee.test.js**: Tests the merchant fee scenario with fee collection
+- **end-to-end-employer.test.js**: Tests the employer/employee payroll scenario
 
 ### New Features Tests
 
@@ -63,6 +65,12 @@ The `run-all-tests.sh` script provides a convenient way to run tests:
 
 # Run end-to-end tests
 ./run-all-tests.sh e2e
+
+# Run merchant fee tests
+./run-all-tests.sh merchant-fee
+
+# Run employer payroll tests
+./run-all-tests.sh employer
 
 # Run new features tests
 ./run-all-tests.sh new-features

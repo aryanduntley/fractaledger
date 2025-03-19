@@ -54,7 +54,19 @@ run_api_tests() {
 # Run end-to-end tests
 run_e2e_tests() {
   print_message "Running end-to-end tests..."
-  npm test -- end-to-end.test.js
+  npm test -- end-to-end.test.js end-to-end-merchant-fee.test.js end-to-end-employer.test.js
+}
+
+# Run merchant fee tests
+run_merchant_fee_tests() {
+  print_message "Running merchant fee tests..."
+  npm test -- end-to-end-merchant-fee.test.js
+}
+
+# Run employer payroll tests
+run_employer_tests() {
+  print_message "Running employer payroll tests..."
+  npm test -- end-to-end-employer.test.js
 }
 
 # Run new features tests
@@ -73,7 +85,9 @@ show_help() {
   echo "  component          Run component tests (blockchain connectors, wallet manager)"
   echo "  chaincode          Run chaincode tests"
   echo "  api                Run API tests"
-  echo "  e2e                Run end-to-end tests"
+  echo "  e2e                Run all end-to-end tests"
+  echo "  merchant-fee       Run merchant fee end-to-end tests"
+  echo "  employer           Run employer payroll end-to-end tests"
   echo "  new-features       Run new features tests"
   echo "  <test-file>        Run a specific test file"
   echo "  help               Show this help message"
@@ -81,7 +95,9 @@ show_help() {
   echo "Examples:"
   echo "  $0 all             Run all tests"
   echo "  $0 component       Run component tests"
-  echo "  $0 new-features    Run new features tests"
+  echo "  $0 e2e             Run all end-to-end tests"
+  echo "  $0 merchant-fee    Run merchant fee tests"
+  echo "  $0 employer        Run employer payroll tests"
   echo "  $0 wallet-manager.test.js  Run wallet manager tests"
 }
 
@@ -108,6 +124,12 @@ main() {
         ;;
       e2e)
         run_e2e_tests
+        ;;
+      merchant-fee)
+        run_merchant_fee_tests
+        ;;
+      employer)
+        run_employer_tests
         ;;
       new-features)
         run_new_features_tests

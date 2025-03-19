@@ -177,12 +177,13 @@ const mockConfig = {
 const { startApiServer } = require('../src/api/server');
 
 describe('API', () => {
+  let server;
   let app;
   let token;
   
   beforeAll(async () => {
     // Start the API server with mock dependencies
-    app = await startApiServer(
+    const serverObj = await startApiServer(
       mockConfig,
       mockBlockchainConnectors,
       mockWalletManager,
@@ -190,10 +191,20 @@ describe('API', () => {
       mockChaincodeManager
     );
     
+    server = serverObj;
+    app = serverObj.app;
+    
     // Generate a JWT token for authentication
     token = jwt.sign({ username: 'admin' }, mockConfig.api.auth.jwtSecret, {
       expiresIn: mockConfig.api.auth.expiresIn
     });
+  });
+  
+  afterAll(async () => {
+    // Close the server after all tests are done
+    if (server && server.close) {
+      await server.close();
+    }
   });
   
   describe('Health Check', () => {

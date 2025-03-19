@@ -18,7 +18,7 @@ const { MessageType, MessageCode, createMessageManager } = require('./messaging'
  * @param {Object} fabricClient The Fabric client
  * @param {Object} chaincodeManager The chaincode manager
  * @param {Object} balanceReconciliation The balance reconciliation module
- * @returns {Object} The Express app
+ * @returns {Object} An object containing the Express app and a close function to shut down the server
  */
 async function startApiServer(config, blockchainConnectors, walletManager, fabricClient, chaincodeManager, balanceReconciliation) {
   try {
@@ -620,11 +620,48 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
     const port = config.api.port || 3000;
     const host = config.api.host || 'localhost';
     
-    app.listen(port, host, () => {
+    const server = app.listen(port, host, () => {
       console.log(`API server listening at http://${host}:${port}`);
     });
     
-    return app;
+    // Return the app, authenticateJWT middleware, and a function to close the server
+    return {
+      app,
+      authenticateJWT,
+      dependencies: {
+        walletManager,
+        fabricClient,
+        chaincodeManager,
+        balanceReconciliation,
+        config
+      },
+      close: () => {
+        return new Promise((resolve, reject) => {
+          server.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        });
+      },
+      // Helper function to register API extensions
+      registerExtension: (extension) => {
+        if (typeof extension === 'function') {
+          extension(app, authenticateJWT, {
+            walletManager,
+            fabricClient,
+            chaincodeManager,
+            balanceReconciliation,
+            config
+          });
+          console.log(`API extension registered: ${extension.name || 'Anonymous extension'}`);
+        } else {
+          throw new Error('Extension must be a function');
+        }
+      }
+    };
   } catch (error) {
     throw new Error(`Failed to start API server: ${error.message}`);
   }

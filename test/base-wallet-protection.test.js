@@ -8,7 +8,7 @@
 
 const { expect } = require('chai');
 const sinon = require('sinon');
-const { WalletManager } = require('../src/wallet/walletManager');
+const { initializeWalletManager } = require('../src/wallet/walletManager');
 
 describe('Base Wallet Protection', () => {
   let walletManager;
@@ -16,7 +16,7 @@ describe('Base Wallet Protection', () => {
   let mockFabricClient;
   let mockConfig;
   
-  beforeEach(() => {
+  beforeEach(async () => {
     // Create mock blockchain connectors
     mockBlockchainConnectors = {
       bitcoin: {
@@ -156,8 +156,32 @@ describe('Base Wallet Protection', () => {
       }
     };
     
+    // Update blockchain connectors to match the new structure
+    mockBlockchainConnectors.bitcoin.btc_wallet_1.config = {
+      connectionType: 'spv'
+    };
+    
+    // Add contract property to mockFabricClient
+    mockFabricClient.contract = true;
+    
+    // Update mockConfig to match the new structure
+    mockConfig = {
+      bitcoin: [
+        {
+          name: 'btc_wallet_1',
+          walletAddress: 'bc1q...',
+          connectionType: 'spv'
+        }
+      ],
+      baseInternalWallet: {
+        namePrefix: 'base_wallet_',
+        description: 'Represents excess funds in the primary on-chain wallet',
+        createOnInitialization: false
+      }
+    };
+    
     // Create wallet manager instance
-    walletManager = new WalletManager(mockBlockchainConnectors, mockFabricClient, mockConfig);
+    walletManager = await initializeWalletManager(mockConfig, mockBlockchainConnectors, mockFabricClient);
     
     // Add the getInternalWalletsByPrimaryWallet method if it doesn't exist
     if (!walletManager.getInternalWalletsByPrimaryWallet) {

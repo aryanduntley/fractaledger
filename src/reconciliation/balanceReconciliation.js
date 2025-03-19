@@ -78,8 +78,52 @@ async function initializeBalanceReconciliation(config, walletManager, fabricClie
         // Get all internal wallets for this primary wallet
         const internalWallets = await walletManager.getInternalWalletsByPrimaryWallet(blockchain, primaryWalletName);
         
-        // Calculate aggregate internal balance
-        const aggregateInternalBalance = internalWallets.reduce(
+        // Separate base wallet from other wallets
+        const baseWalletId = `${config.baseInternalWallet.namePrefix}${blockchain}_${primaryWalletName}`;
+        const nonBaseWallets = internalWallets.filter(wallet => wallet.id !== baseWalletId);
+        const baseWallet = internalWallets.find(wallet => wallet.id === baseWalletId);
+        
+        // Calculate aggregate internal balance (excluding base wallet)
+        const aggregateNonBaseBalance = nonBaseWallets.reduce(
+          (sum, wallet) => sum + wallet.balance, 
+          0
+        );
+        
+        // Calculate what the base wallet balance should be
+        const expectedBaseWalletBalance = onChainBalance - aggregateNonBaseBalance;
+        
+        // Check if we need to update the base wallet
+        let baseWalletUpdated = false;
+        if (!baseWallet) {
+          // Create the base wallet if it doesn't exist
+          logger.info(`Base wallet ${baseWalletId} not found, creating it`);
+          try {
+            await walletManager.reconcileBaseInternalWallet(blockchain, primaryWalletName);
+            baseWalletUpdated = true;
+          } catch (error) {
+            logger.error(`Failed to create base wallet: ${error.message}`);
+          }
+        } else if (Math.abs(baseWallet.balance - expectedBaseWalletBalance) > reconciliationConfig.warningThreshold) {
+          // Update the base wallet balance if it's different from the expected value
+          logger.info(`Updating base wallet ${baseWalletId} balance from ${baseWallet.balance} to ${expectedBaseWalletBalance}`);
+          try {
+            await walletManager.reconcileBaseInternalWallet(blockchain, primaryWalletName);
+            baseWalletUpdated = true;
+          } catch (error) {
+            logger.error(`Failed to update base wallet balance: ${error.message}`);
+          }
+        }
+        
+        // Get the updated internal wallets if the base wallet was updated
+        let updatedInternalWallets = internalWallets;
+        let updatedBaseWallet = baseWallet;
+        if (baseWalletUpdated) {
+          updatedInternalWallets = await walletManager.getInternalWalletsByPrimaryWallet(blockchain, primaryWalletName);
+          updatedBaseWallet = updatedInternalWallets.find(wallet => wallet.id === baseWalletId);
+        }
+        
+        // Calculate the total internal balance including the base wallet
+        const aggregateInternalBalance = updatedInternalWallets.reduce(
           (sum, wallet) => sum + wallet.balance, 
           0
         );
@@ -95,9 +139,12 @@ async function initializeBalanceReconciliation(config, walletManager, fabricClie
           blockchain,
           primaryWalletName,
           onChainBalance,
+          aggregateNonBaseBalance,
+          baseWalletBalance: updatedBaseWallet ? updatedBaseWallet.balance : 0,
           aggregateInternalBalance,
           difference,
           hasDiscrepancy,
+          baseWalletUpdated,
           timestamp: new Date().toISOString()
         };
         

@@ -69,5 +69,8 @@ module.exports = {
   ],
   
   // The test runner to use
-  testRunner: 'jest-circus/runner'
+  testRunner: 'jest-circus/runner',
+  
+  // Detect open handles (like unfinished timers or network connections)
+  detectOpenHandles: true
 };

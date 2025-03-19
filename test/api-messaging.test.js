@@ -251,6 +251,7 @@ describe('API Messaging System', () => {
   
   describe('API Integration', () => {
     let app;
+    let server;
     let request;
     
     beforeEach(() => {
@@ -260,6 +261,9 @@ describe('API Messaging System', () => {
       
       app = express();
       app.use(express.json());
+      
+      // Start the server
+      server = app.listen(3000);
       
       // Mock endpoint that uses the message manager
       app.post('/api/transactions/withdraw', (req, res) => {
@@ -307,6 +311,13 @@ describe('API Messaging System', () => {
         // Return response with messages
         res.json(msgManager.createResponse({ withdrawal: result }));
       });
+    });
+    
+    afterEach(() => {
+      // Close the server after each test
+      if (server) {
+        server.close();
+      }
     });
     
     it('should include messages in API responses', async () => {
