@@ -91,7 +91,8 @@ class TransactionBuilder {
  * @param {Array} inputs The transaction inputs (UTXOs)
  * @param {Array} outputs The transaction outputs
  * @param {Object} options Additional options
- * @returns {string} The signed transaction in hexadecimal format
+ * @param {string} options.opReturn Optional OP_RETURN data to include in the transaction (max 80 bytes)
+ * @returns {Object} The transaction details including txid and hex
  */
 createAndSignTransaction(privateKey, inputs, outputs, options = {}) {
   try {
@@ -121,6 +122,28 @@ createAndSignTransaction(privateKey, inputs, outputs, options = {}) {
         value: output.value,
       });
     });
+    
+    // Add OP_RETURN output if provided
+    if (options.opReturn) {
+      // Ensure the data is within the size limit (80 bytes)
+      const data = Buffer.from(options.opReturn);
+      if (data.length > 80) {
+        throw new Error('OP_RETURN data exceeds the maximum size of 80 bytes');
+      }
+      
+      // Create OP_RETURN output
+      const opReturnScript = bitcoin.script.compile([
+        bitcoin.opcodes.OP_RETURN,
+        data
+      ]);
+      
+      psbt.addOutput({
+        script: opReturnScript,
+        value: 0, // OP_RETURN outputs have zero value
+      });
+      
+      logger.debug(`Added OP_RETURN data: ${options.opReturn}`);
+    }
     
     // Sign inputs
     const keyPair = bitcoin.ECPair.fromWIF(privateKey, this.networkParams);

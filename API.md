@@ -163,6 +163,46 @@ Response:
 ]
 ```
 
+### Destroy Wallet
+
+```
+DELETE /api/wallets/:blockchain/:name
+{
+  "confirmation": "destroy-bitcoin-btc_wallet_1"
+}
+```
+
+Permanently destroys a wallet and all associated data, including internal wallets, transaction history, and other related information. This action is irreversible.
+
+**Parameters**
+
+- `blockchain` (path): The blockchain type (bitcoin, litecoin, dogecoin)
+- `name` (path): The wallet name
+- `confirmation` (body): Explicit confirmation string in the format `destroy-{blockchain}-{name}`
+
+**Response**
+
+```json
+{
+  "success": true,
+  "message": "Wallet bitcoin/btc_wallet_1 and all associated data have been destroyed",
+  "details": {
+    "blockchain": "bitcoin",
+    "walletName": "btc_wallet_1",
+    "status": "destroyed",
+    "internalWalletsDeleted": ["internal_wallet_1", "base_wallet_bitcoin_btc_wallet_1"]
+  }
+}
+```
+
+**Error Responses**
+
+- `400 Bad Request`: Missing or invalid confirmation
+- `404 Not Found`: Wallet not found
+- `500 Internal Server Error`: Server error
+
+> **Warning**: This operation is irreversible and will permanently delete all data associated with the wallet. Use with extreme caution.
+
 ## Internal Wallet Management
 
 ### Create Internal Wallet
@@ -346,7 +386,8 @@ POST /api/transactions/withdraw
 {
   "internalWalletId": "internal_wallet_1",
   "toAddress": "bc1q...",
-  "amount": 0.1
+  "amount": 0.1,
+  "opReturn": "Internal wallet ID: internal_wallet_1" // Optional
 }
 ```
 
@@ -360,11 +401,14 @@ Response:
   "amount": 0.1,
   "fee": 0.0001,
   "timestamp": "2025-03-12T12:00:00Z",
-  "txid": "0x1234567890abcdef"
+  "txid": "0x1234567890abcdef",
+  "opReturn": "Internal wallet ID: internal_wallet_1"
 }
 ```
 
 > **Note**: The `fee` field represents the blockchain transaction fee (gas) required to process the on-chain transaction. This fee is deducted from the internal wallet's balance to ensure that the total withdrawal amount (including the fee) doesn't exceed the available balance. The fee varies based on network conditions and transaction size.
+>
+> **Note**: The optional `opReturn` parameter allows you to include metadata in the blockchain transaction using the OP_RETURN opcode. This can be useful for tracking the source of transactions or including additional information. The maximum size for OP_RETURN data is 80 bytes. This feature is supported on most UTXO-based blockchains including Bitcoin, Litecoin, and Dogecoin.
 
 ### Get Transaction History
 

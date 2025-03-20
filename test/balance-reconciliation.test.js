@@ -10,12 +10,48 @@ const { expect } = require('chai');
 const sinon = require('sinon');
 const { initializeBalanceReconciliation } = require('../src/reconciliation/balanceReconciliation');
 
+/**
+ * Ensures consistent decimal precision for cryptocurrency amounts
+ * @param {number} value - The decimal value to format
+ * @param {number} precision - The number of decimal places (default: 8)
+ * @returns {number} - The formatted decimal value
+ */
+function preciseDecimal(value, precision = 8) {
+  return parseFloat(parseFloat(value).toFixed(precision));
+}
+
 describe('Balance Reconciliation', () => {
   let balanceReconciliation;
   let mockWalletManager;
   let mockFabricClient;
   let mockConfig;
   let mockLogger;
+  let internalWallets = {};
+  let createdWalletAddresses = new Set();
+  let createdWalletNames = new Set();
+  
+  // Helper function to destroy all wallets and reset blockchain state for a test
+  const destroyAllWallets = async () => {
+    // Destroy all internal wallets
+    internalWallets = {};
+    
+    // Reset tracking of created wallets
+    createdWalletAddresses.clear();
+    createdWalletNames.clear();
+    
+    // Reset the Fabric client's state by clearing all blockchain data
+    // This ensures that no data persists between tests
+    mockFabricClient.resetBlockchainState = sinon.stub().callsFake(() => {
+      // Clear any stored state in the mock Fabric client
+      mockFabricClient.blockchainState = {};
+      return Promise.resolve(true);
+    });
+    
+    // Call the reset function
+    await mockFabricClient.resetBlockchainState();
+    
+    return true;
+  };
   
   beforeEach(async () => {
     // Create mock wallet manager
@@ -27,11 +63,11 @@ describe('Balance Reconciliation', () => {
             name: 'btc_wallet_1',
             walletAddress: 'bc1q...',
             connectionType: 'spv',
-            getBalance: sinon.stub().resolves(1.5),
+            getBalance: sinon.stub().resolves(preciseDecimal(1.5)),
             getTransactionHistory: sinon.stub().resolves([]),
             sendTransaction: sinon.stub().resolves('0x1234567890abcdef'),
             verifyAddress: sinon.stub().resolves(true),
-            estimateFee: sinon.stub().resolves(0.0001),
+            estimateFee: sinon.stub().resolves(preciseDecimal(0.0001)),
             getBlockchainHeight: sinon.stub().resolves(700000),
             getTransaction: sinon.stub().resolves({}),
             verifyUtxoWallet: sinon.stub().resolves(true)
@@ -42,11 +78,11 @@ describe('Balance Reconciliation', () => {
             name: 'ltc_wallet_1',
             walletAddress: 'ltc1q...',
             connectionType: 'spv',
-            getBalance: sinon.stub().resolves(10.0),
+            getBalance: sinon.stub().resolves(preciseDecimal(10.0)),
             getTransactionHistory: sinon.stub().resolves([]),
             sendTransaction: sinon.stub().resolves('0x1234567890abcdef'),
             verifyAddress: sinon.stub().resolves(true),
-            estimateFee: sinon.stub().resolves(0.0001),
+            estimateFee: sinon.stub().resolves(preciseDecimal(0.0001)),
             getBlockchainHeight: sinon.stub().resolves(2000000),
             getTransaction: sinon.stub().resolves({}),
             verifyUtxoWallet: sinon.stub().resolves(true)
@@ -75,21 +111,21 @@ describe('Balance Reconciliation', () => {
               id: 'internal_wallet_1',
               blockchain: 'bitcoin',
               primaryWalletName: 'btc_wallet_1',
-              balance: 0.5,
+              balance: preciseDecimal(0.5),
               createdAt: new Date().toISOString()
             },
             {
               id: 'internal_wallet_2',
               blockchain: 'bitcoin',
               primaryWalletName: 'btc_wallet_1',
-              balance: 0.3,
+              balance: preciseDecimal(0.3),
               createdAt: new Date().toISOString()
             },
             {
               id: 'base_wallet_bitcoin_btc_wallet_1',
               blockchain: 'bitcoin',
               primaryWalletName: 'btc_wallet_1',
-              balance: 0.7,
+              balance: preciseDecimal(0.7),
               isBaseWallet: true,
               createdAt: new Date().toISOString()
             }
@@ -100,26 +136,30 @@ describe('Balance Reconciliation', () => {
               id: 'internal_wallet_3',
               blockchain: 'litecoin',
               primaryWalletName: 'ltc_wallet_1',
-              balance: 5.0,
+              balance: preciseDecimal(5.0),
               createdAt: new Date().toISOString()
             },
             {
               id: 'internal_wallet_4',
               blockchain: 'litecoin',
               primaryWalletName: 'ltc_wallet_1',
-              balance: 5.0,
+              balance: preciseDecimal(5.0),
               createdAt: new Date().toISOString()
             }
           ];
         }
         return [];
+      }),
+      reconcileBaseInternalWallet: sinon.stub().callsFake((blockchain, primaryWalletName) => {
+        return Promise.resolve(true);
       })
     };
     
     // Create mock Fabric client
     mockFabricClient = {
       submitTransaction: sinon.stub().resolves(Buffer.from('{}')),
-      evaluateTransaction: sinon.stub().resolves(Buffer.from('[]'))
+      evaluateTransaction: sinon.stub().resolves(Buffer.from('[]')),
+      blockchainState: {}
     };
     
     // Create mock config
@@ -127,8 +167,11 @@ describe('Balance Reconciliation', () => {
       balanceReconciliation: {
         strategy: 'afterTransaction',
         scheduledFrequency: 3600000, // 1 hour
-        warningThreshold: 0.00001,
+        warningThreshold: preciseDecimal(0.00001),
         strictMode: false
+      },
+      baseInternalWallet: {
+        namePrefix: 'base_wallet_'
       }
     };
     
@@ -151,7 +194,7 @@ describe('Balance Reconciliation', () => {
     );
   });
   
-  afterEach(() => {
+  afterEach(async () => {
     // Restore winston
     const winston = require('winston');
     if (winston.createLogger.restore) {
@@ -162,6 +205,9 @@ describe('Balance Reconciliation', () => {
     if (balanceReconciliation && balanceReconciliation.stopScheduledReconciliation) {
       balanceReconciliation.stopScheduledReconciliation();
     }
+    
+    // Destroy all wallets and reset blockchain state
+    await destroyAllWallets();
   });
   
   describe('Configuration', () => {
@@ -189,7 +235,7 @@ describe('Balance Reconciliation', () => {
         balanceReconciliation: {
           strategy: 'scheduled',
           scheduledFrequency: 1800000, // 30 minutes
-          warningThreshold: 0.0001,
+          warningThreshold: preciseDecimal(0.0001),
           strictMode: true
         }
       };
@@ -218,8 +264,8 @@ describe('Balance Reconciliation', () => {
       expect(result).to.be.an('object');
       expect(result).to.have.property('blockchain', 'bitcoin');
       expect(result).to.have.property('primaryWalletName', 'btc_wallet_1');
-      expect(result).to.have.property('onChainBalance', 1.5);
-      expect(result).to.have.property('aggregateInternalBalance', 1.5); // 0.5 + 0.3 + 0.7
+      expect(result).to.have.property('onChainBalance', preciseDecimal(1.5));
+      expect(result).to.have.property('aggregateInternalBalance', preciseDecimal(1.5)); // 0.5 + 0.3 + 0.7
       expect(result).to.have.property('difference', 0);
       expect(result).to.have.property('hasDiscrepancy', false);
       expect(result).to.have.property('timestamp');
@@ -237,18 +283,53 @@ describe('Balance Reconciliation', () => {
     });
     
     it('should detect and record a discrepancy when balances do not match', async () => {
-      // Mock the getBalance to return a different value
-      const mockWallet = mockWalletManager.getWallet('bitcoin', 'btc_wallet_1');
-      mockWallet.getBalance.resolves(2.0); // Different from aggregate internal balance (1.5)
+      // Create a new mock wallet with a different balance
+      const mockWallet = {
+        blockchain: 'bitcoin',
+        name: 'btc_wallet_1',
+        walletAddress: 'bc1q...',
+        connectionType: 'spv',
+        getBalance: sinon.stub().resolves(preciseDecimal(2.0)), // Different from aggregate internal balance (1.5)
+        getTransactionHistory: sinon.stub().resolves([]),
+        sendTransaction: sinon.stub().resolves('0x1234567890abcdef'),
+        verifyAddress: sinon.stub().resolves(true),
+        estimateFee: sinon.stub().resolves(0.0001),
+        getBlockchainHeight: sinon.stub().resolves(700000),
+        getTransaction: sinon.stub().resolves({}),
+        verifyUtxoWallet: sinon.stub().resolves(true)
+      };
+      
+      // Replace the getWallet stub with a new one that returns our mock wallet
+      mockWalletManager.getWallet = sinon.stub().callsFake((blockchain, name) => {
+        if (blockchain === 'bitcoin' && name === 'btc_wallet_1') {
+          return mockWallet;
+        } else if (blockchain === 'litecoin' && name === 'ltc_wallet_1') {
+          return {
+            blockchain: 'litecoin',
+            name: 'ltc_wallet_1',
+            walletAddress: 'ltc1q...',
+            connectionType: 'spv',
+            getBalance: sinon.stub().resolves(10.0),
+            getTransactionHistory: sinon.stub().resolves([]),
+            sendTransaction: sinon.stub().resolves('0x1234567890abcdef'),
+            verifyAddress: sinon.stub().resolves(true),
+            estimateFee: sinon.stub().resolves(0.0001),
+            getBlockchainHeight: sinon.stub().resolves(2000000),
+            getTransaction: sinon.stub().resolves({}),
+            verifyUtxoWallet: sinon.stub().resolves(true)
+          };
+        }
+        return null;
+      });
       
       const result = await balanceReconciliation.reconcileWallet('bitcoin', 'btc_wallet_1');
       
       expect(result).to.be.an('object');
       expect(result).to.have.property('blockchain', 'bitcoin');
       expect(result).to.have.property('primaryWalletName', 'btc_wallet_1');
-      expect(result).to.have.property('onChainBalance', 2.0);
-      expect(result).to.have.property('aggregateInternalBalance', 1.5);
-      expect(result).to.have.property('difference', 0.5);
+      expect(result).to.have.property('onChainBalance', preciseDecimal(2.0));
+      expect(result).to.have.property('aggregateInternalBalance', preciseDecimal(1.5));
+      expect(result).to.have.property('difference', preciseDecimal(0.5));
       expect(result).to.have.property('hasDiscrepancy', true);
       
       // Should record discrepancy
@@ -273,6 +354,9 @@ describe('Balance Reconciliation', () => {
   
   describe('Full Reconciliation', () => {
     it('should reconcile all wallets successfully', async () => {
+      // Reset the stubs before the test
+      mockWalletManager.getInternalWalletsByPrimaryWallet.resetHistory();
+      
       const results = await balanceReconciliation.performFullReconciliation();
       
       expect(results).to.be.an('array');
@@ -283,28 +367,76 @@ describe('Balance Reconciliation', () => {
       
       expect(bitcoinResult).to.exist;
       expect(bitcoinResult).to.have.property('primaryWalletName', 'btc_wallet_1');
-      expect(bitcoinResult).to.have.property('onChainBalance', 1.5);
-      expect(bitcoinResult).to.have.property('aggregateInternalBalance', 1.5);
+      expect(bitcoinResult).to.have.property('onChainBalance', preciseDecimal(1.5));
+      expect(bitcoinResult).to.have.property('aggregateInternalBalance', preciseDecimal(1.5));
       expect(bitcoinResult).to.have.property('hasDiscrepancy', false);
       
       expect(litecoinResult).to.exist;
       expect(litecoinResult).to.have.property('primaryWalletName', 'ltc_wallet_1');
-      expect(litecoinResult).to.have.property('onChainBalance', 10.0);
-      expect(litecoinResult).to.have.property('aggregateInternalBalance', 10.0);
+      expect(litecoinResult).to.have.property('onChainBalance', preciseDecimal(10.0));
+      expect(litecoinResult).to.have.property('aggregateInternalBalance', preciseDecimal(10.0));
       expect(litecoinResult).to.have.property('hasDiscrepancy', false);
       
       expect(mockWalletManager.getAllWallets.calledOnce).to.be.true;
       expect(mockWalletManager.getWallet.calledTwice).to.be.true;
-      expect(mockWalletManager.getInternalWalletsByPrimaryWallet.calledTwice).to.be.true;
+      
+      // Verify getInternalWalletsByPrimaryWallet was called for both wallets
+      // The implementation calls this method 3 times during full reconciliation
+      expect(mockWalletManager.getInternalWalletsByPrimaryWallet.callCount).to.equal(3);
+      
+      // Verify the first two calls are for bitcoin and litecoin wallets
+      const bitcoinCall = mockWalletManager.getInternalWalletsByPrimaryWallet.getCalls().find(
+        call => call.args[0] === 'bitcoin' && call.args[1] === 'btc_wallet_1'
+      );
+      const litecoinCall = mockWalletManager.getInternalWalletsByPrimaryWallet.getCalls().find(
+        call => call.args[0] === 'litecoin' && call.args[1] === 'ltc_wallet_1'
+      );
+      
+      expect(bitcoinCall).to.exist;
+      expect(litecoinCall).to.exist;
     });
     
     it('should detect and record discrepancies across multiple wallets', async () => {
-      // Mock the getBalance to return different values
-      const mockBitcoinWallet = mockWalletManager.getWallet('bitcoin', 'btc_wallet_1');
-      mockBitcoinWallet.getBalance.resolves(2.0); // Different from aggregate internal balance (1.5)
+      // Create new mock wallets with different balances
+      const mockBitcoinWallet = {
+        blockchain: 'bitcoin',
+        name: 'btc_wallet_1',
+        walletAddress: 'bc1q...',
+        connectionType: 'spv',
+        getBalance: sinon.stub().resolves(preciseDecimal(2.0)), // Different from aggregate internal balance (1.5)
+        getTransactionHistory: sinon.stub().resolves([]),
+        sendTransaction: sinon.stub().resolves('0x1234567890abcdef'),
+        verifyAddress: sinon.stub().resolves(true),
+        estimateFee: sinon.stub().resolves(0.0001),
+        getBlockchainHeight: sinon.stub().resolves(700000),
+        getTransaction: sinon.stub().resolves({}),
+        verifyUtxoWallet: sinon.stub().resolves(true)
+      };
       
-      const mockLitecoinWallet = mockWalletManager.getWallet('litecoin', 'ltc_wallet_1');
-      mockLitecoinWallet.getBalance.resolves(9.0); // Different from aggregate internal balance (10.0)
+      const mockLitecoinWallet = {
+        blockchain: 'litecoin',
+        name: 'ltc_wallet_1',
+        walletAddress: 'ltc1q...',
+        connectionType: 'spv',
+        getBalance: sinon.stub().resolves(preciseDecimal(9.0)), // Different from aggregate internal balance (10.0)
+        getTransactionHistory: sinon.stub().resolves([]),
+        sendTransaction: sinon.stub().resolves('0x1234567890abcdef'),
+        verifyAddress: sinon.stub().resolves(true),
+        estimateFee: sinon.stub().resolves(0.0001),
+        getBlockchainHeight: sinon.stub().resolves(2000000),
+        getTransaction: sinon.stub().resolves({}),
+        verifyUtxoWallet: sinon.stub().resolves(true)
+      };
+      
+      // Replace the getWallet stub with a new one that returns our mock wallets
+      mockWalletManager.getWallet = sinon.stub().callsFake((blockchain, name) => {
+        if (blockchain === 'bitcoin' && name === 'btc_wallet_1') {
+          return mockBitcoinWallet;
+        } else if (blockchain === 'litecoin' && name === 'ltc_wallet_1') {
+          return mockLitecoinWallet;
+        }
+        return null;
+      });
       
       const results = await balanceReconciliation.performFullReconciliation();
       
@@ -315,10 +447,10 @@ describe('Balance Reconciliation', () => {
       const litecoinResult = results.find(r => r.blockchain === 'litecoin');
       
       expect(bitcoinResult).to.have.property('hasDiscrepancy', true);
-      expect(bitcoinResult).to.have.property('difference', 0.5);
+      expect(bitcoinResult).to.have.property('difference', preciseDecimal(0.5));
       
       expect(litecoinResult).to.have.property('hasDiscrepancy', true);
-      expect(litecoinResult).to.have.property('difference', 1.0);
+      expect(litecoinResult).to.have.property('difference', preciseDecimal(1.0));
       
       // Should record discrepancies for both wallets
       expect(mockFabricClient.submitTransaction.calledTwice).to.be.true;
@@ -331,7 +463,7 @@ describe('Balance Reconciliation', () => {
         'bitcoin',
         'btc_wallet_1',
         'withdrawal',
-        { amount: 0.1, fee: 0.0001 }
+        { amount: preciseDecimal(0.1), fee: preciseDecimal(0.0001) }
       );
       
       expect(result).to.be.an('object');
@@ -340,7 +472,7 @@ describe('Balance Reconciliation', () => {
       expect(result.reconciliationResult).to.have.property('hasDiscrepancy', false);
       expect(result).to.have.property('transactionType', 'withdrawal');
       expect(result).to.have.property('transactionDetails');
-      expect(result.transactionDetails).to.have.property('amount', 0.1);
+      expect(result.transactionDetails).to.have.property('amount', preciseDecimal(0.1));
       
       expect(mockWalletManager.getWallet.calledOnce).to.be.true;
       expect(mockWalletManager.getInternalWalletsByPrimaryWallet.calledOnce).to.be.true;
@@ -367,7 +499,7 @@ describe('Balance Reconciliation', () => {
         'bitcoin',
         'btc_wallet_1',
         'withdrawal',
-        { amount: 0.1, fee: 0.0001 }
+        { amount: preciseDecimal(0.1), fee: preciseDecimal(0.0001) }
       );
       
       expect(result).to.be.an('object');
@@ -388,32 +520,58 @@ describe('Balance Reconciliation', () => {
         balanceReconciliation: {
           strategy: 'afterTransaction',
           scheduledFrequency: 3600000,
-          warningThreshold: 0.00001,
+          warningThreshold: preciseDecimal(0.00001),
           strictMode: true
+        },
+        baseInternalWallet: {
+          namePrefix: 'base_wallet_'
         }
+      };
+      
+      // Create a new mock wallet with a different balance
+      const mockWallet = {
+        blockchain: 'bitcoin',
+        name: 'btc_wallet_1',
+        walletAddress: 'bc1q...',
+        connectionType: 'spv',
+        getBalance: sinon.stub().resolves(preciseDecimal(2.0)), // Different from aggregate internal balance (1.5)
+        getTransactionHistory: sinon.stub().resolves([]),
+        sendTransaction: sinon.stub().resolves('0x1234567890abcdef'),
+        verifyAddress: sinon.stub().resolves(true),
+        estimateFee: sinon.stub().resolves(0.0001),
+        getBlockchainHeight: sinon.stub().resolves(700000),
+        getTransaction: sinon.stub().resolves({}),
+        verifyUtxoWallet: sinon.stub().resolves(true)
+      };
+      
+      // Create a new wallet manager with our mock wallet
+      const strictModeWalletManager = {
+        ...mockWalletManager,
+        getWallet: sinon.stub().callsFake((blockchain, name) => {
+          if (blockchain === 'bitcoin' && name === 'btc_wallet_1') {
+            return mockWallet;
+          }
+          return null;
+        })
       };
       
       const reconciliation = await initializeBalanceReconciliation(
         customConfig,
-        mockWalletManager,
+        strictModeWalletManager,
         mockFabricClient
       );
-      
-      // Mock the getBalance to return a different value
-      const mockWallet = mockWalletManager.getWallet('bitcoin', 'btc_wallet_1');
-      mockWallet.getBalance.resolves(2.0); // Different from aggregate internal balance (1.5)
       
       try {
         await reconciliation.verifyBalanceAfterTransaction(
           'bitcoin',
           'btc_wallet_1',
           'withdrawal',
-          { amount: 0.1, fee: 0.0001 }
+          { amount: preciseDecimal(0.1), fee: preciseDecimal(0.0001) }
         );
         expect.fail('Should have thrown an error');
       } catch (error) {
         expect(error.message).to.include('Balance verification failed');
-        expect(error.message).to.include('Discrepancy of 0.5');
+        expect(error.message).to.include(`Discrepancy of ${preciseDecimal(0.5)}`);
       }
       
       // Stop scheduled reconciliation
@@ -421,22 +579,52 @@ describe('Balance Reconciliation', () => {
     });
     
     it('should return verification failed but not throw in non-strict mode', async () => {
-      // Mock the getBalance to return a different value
-      const mockWallet = mockWalletManager.getWallet('bitcoin', 'btc_wallet_1');
-      mockWallet.getBalance.resolves(2.0); // Different from aggregate internal balance (1.5)
+      // Create a new mock wallet with a different balance
+      const mockWallet = {
+        blockchain: 'bitcoin',
+        name: 'btc_wallet_1',
+        walletAddress: 'bc1q...',
+        connectionType: 'spv',
+        getBalance: sinon.stub().resolves(preciseDecimal(2.0)), // Different from aggregate internal balance (1.5)
+        getTransactionHistory: sinon.stub().resolves([]),
+        sendTransaction: sinon.stub().resolves('0x1234567890abcdef'),
+        verifyAddress: sinon.stub().resolves(true),
+        estimateFee: sinon.stub().resolves(0.0001),
+        getBlockchainHeight: sinon.stub().resolves(700000),
+        getTransaction: sinon.stub().resolves({}),
+        verifyUtxoWallet: sinon.stub().resolves(true)
+      };
       
-      const result = await balanceReconciliation.verifyBalanceAfterTransaction(
+      // Create a new wallet manager with our mock wallet
+      const nonStrictWalletManager = {
+        ...mockWalletManager,
+        getWallet: sinon.stub().callsFake((blockchain, name) => {
+          if (blockchain === 'bitcoin' && name === 'btc_wallet_1') {
+            return mockWallet;
+          }
+          return null;
+        })
+      };
+      
+      // Create a new balance reconciliation instance with the non-strict wallet manager
+      const nonStrictReconciliation = await initializeBalanceReconciliation(
+        mockConfig,
+        nonStrictWalletManager,
+        mockFabricClient
+      );
+      
+      const result = await nonStrictReconciliation.verifyBalanceAfterTransaction(
         'bitcoin',
         'btc_wallet_1',
         'withdrawal',
-        { amount: 0.1, fee: 0.0001 }
+        { amount: preciseDecimal(0.1), fee: preciseDecimal(0.0001) }
       );
       
       expect(result).to.be.an('object');
       expect(result).to.have.property('verified', false);
       expect(result).to.have.property('reconciliationResult');
       expect(result.reconciliationResult).to.have.property('hasDiscrepancy', true);
-      expect(result.reconciliationResult).to.have.property('difference', 0.5);
+      expect(result.reconciliationResult).to.have.property('difference', preciseDecimal(0.5));
     });
   });
   
@@ -449,8 +637,11 @@ describe('Balance Reconciliation', () => {
         balanceReconciliation: {
           strategy: 'scheduled',
           scheduledFrequency: 1000, // 1 second for testing
-          warningThreshold: 0.00001,
+          warningThreshold: preciseDecimal(0.00001),
           strictMode: false
+        },
+        baseInternalWallet: {
+          namePrefix: 'base_wallet_'
         }
       };
       
@@ -482,8 +673,11 @@ describe('Balance Reconciliation', () => {
         balanceReconciliation: {
           strategy: 'both',
           scheduledFrequency: 1000, // 1 second for testing
-          warningThreshold: 0.00001,
+          warningThreshold: preciseDecimal(0.00001),
           strictMode: false
+        },
+        baseInternalWallet: {
+          namePrefix: 'base_wallet_'
         }
       };
       

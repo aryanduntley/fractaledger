@@ -18,6 +18,7 @@ FractaLedger uses a multi-layered testing approach:
 - **connectors.test.js**: Tests all blockchain connector implementations (SPV, Full Node, API)
 - **wallet-manager.test.js**: Tests the wallet manager component for wallet verification, creation, and management
 - **wallet-id-uniqueness.test.js**: Tests the uniqueness constraint of internal wallet IDs across the system
+- **op-return.test.js**: Tests the OP_RETURN functionality in the transaction builder for including metadata in blockchain transactions
 
 ### Chaincode Tests
 

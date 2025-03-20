@@ -46,6 +46,11 @@ async function initializeBalanceReconciliation(config, walletManager, fabricClie
       strictMode: false
     };
     
+    // Get base internal wallet configuration
+    const baseInternalWalletConfig = config.baseInternalWallet || {
+      namePrefix: 'base_wallet_'
+    };
+    
     // Initialize scheduled reconciliation if enabled
     let scheduledReconciliationInterval = null;
     if (reconciliationConfig.strategy === 'scheduled' || reconciliationConfig.strategy === 'both') {
@@ -79,7 +84,7 @@ async function initializeBalanceReconciliation(config, walletManager, fabricClie
         const internalWallets = await walletManager.getInternalWalletsByPrimaryWallet(blockchain, primaryWalletName);
         
         // Separate base wallet from other wallets
-        const baseWalletId = `${config.baseInternalWallet.namePrefix}${blockchain}_${primaryWalletName}`;
+        const baseWalletId = `${baseInternalWalletConfig.namePrefix}${blockchain}_${primaryWalletName}`;
         const nonBaseWallets = internalWallets.filter(wallet => wallet.id !== baseWalletId);
         const baseWallet = internalWallets.find(wallet => wallet.id === baseWalletId);
         

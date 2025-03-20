@@ -363,10 +363,18 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
     
     app.post('/api/transactions/withdraw', authenticateJWT, async (req, res) => {
       try {
-        const { internalWalletId, toAddress, amount } = req.body;
+        const { internalWalletId, toAddress, amount, opReturn } = req.body;
         
         if (!internalWalletId || !toAddress || !amount) {
           return res.status(400).json({ error: 'Missing required parameters' });
+        }
+        
+        // Validate opReturn if provided
+        if (opReturn && Buffer.from(opReturn).length > 80) {
+          return res.status(400).json({ 
+            error: 'OP_RETURN data exceeds maximum size',
+            message: 'OP_RETURN data must be 80 bytes or less'
+          });
         }
         
         // Get the internal wallet
@@ -421,11 +429,19 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
         const withdrawal = JSON.parse(result.toString());
         
         // Send the transaction to the blockchain
-        const txid = await primaryWallet.sendTransaction(toAddress, amount, { fee });
+        const txOptions = { fee };
+        
+        // Add OP_RETURN data if provided
+        if (opReturn) {
+          txOptions.opReturn = opReturn;
+        }
+        
+        const txid = await primaryWallet.sendTransaction(toAddress, amount, txOptions);
         
         res.json({
           ...withdrawal,
-          txid
+          txid,
+          opReturn: opReturn || undefined
         });
       } catch (error) {
         res.status(500).json({ error: error.message });
@@ -611,6 +627,33 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
         const resolvedDiscrepancy = JSON.parse(result.toString());
         
         res.json(resolvedDiscrepancy);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    // Wallet destruction
+    app.delete('/api/wallets/:blockchain/:name', authenticateJWT, async (req, res) => {
+      try {
+        const { blockchain, name } = req.params;
+        const { confirmation } = req.body;
+        
+        // Require explicit confirmation to prevent accidental deletion
+        if (confirmation !== `destroy-${blockchain}-${name}`) {
+          return res.status(400).json({ 
+            error: 'Explicit confirmation required',
+            message: `To confirm deletion, please provide confirmation: "destroy-${blockchain}-${name}"`
+          });
+        }
+        
+        // Destroy the wallet
+        const result = await walletManager.destroyWallet(blockchain, name);
+        
+        res.json({
+          success: true,
+          message: `Wallet ${blockchain}/${name} and all associated data have been destroyed`,
+          details: result
+        });
       } catch (error) {
         res.status(500).json({ error: error.message });
       }

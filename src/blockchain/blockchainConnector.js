@@ -36,7 +36,7 @@ const logger = winston.createLogger({
 class BlockchainConnector {
   /**
    * Constructor
-   * @param {string} blockchain The blockchain type (bitcoin, litecoin, dogecoin)
+   * @param {string} blockchain The blockchain type (bitcoin, litecoin, dogecoin, etc.)
    * @param {Object} config The wallet configuration
    */
   constructor(blockchain, config) {
@@ -54,6 +54,24 @@ class BlockchainConnector {
     
     // Initialize event handling
     this._initializeEventHandling();
+    
+    // Verify required methods are implemented
+    const requiredMethods = [
+      'broadcastTransaction',
+      'sendTransaction',
+      'verifyAddress',
+      'estimateFee',
+      'getWalletBalance',
+      'getTransactionHistory',
+      'getUTXOs',
+      'cleanup'
+    ];
+    
+    for (const method of requiredMethods) {
+      if (this[method] === undefined || typeof this[method] !== 'function') {
+        throw new Error(`BlockchainConnector must implement ${method} method`);
+      }
+    }
     
     logger.info(`Created blockchain connector for ${blockchain} wallet: ${this.name}`);
   }
@@ -140,6 +158,10 @@ class BlockchainConnector {
    * @param {string} toAddress The recipient address
    * @param {number} amount The amount to send
    * @param {Object} options Additional options
+   * @param {number} options.fee Optional transaction fee
+   * @param {number} options.feeRate Optional fee rate in satoshis per byte
+   * @param {Array} options.utxos Optional UTXOs to use for the transaction
+   * @param {string} options.opReturn Optional OP_RETURN data to include in the transaction (max 80 bytes)
    * @returns {Promise<Object>} The transaction result
    */
   async sendTransaction(toAddress, amount, options = {}) {
@@ -180,8 +202,11 @@ class BlockchainConnector {
         });
       }
       
+      // Create transaction options
+      const txOptions = { ...options };
+      
       // Create and sign the transaction
-      const transaction = await this.createTransaction(utxos, outputs, options);
+      const transaction = await this.createTransaction(utxos, outputs, txOptions);
       
       // Broadcast the transaction
       const result = await this.broadcastTransaction(transaction.txHex, {

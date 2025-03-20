@@ -190,7 +190,10 @@ function registerEmployeePayrollExtension(app, authenticateJWT, dependencies) {
       
       // Update the internal wallet balance
       try {
-        const updatedWallet = await walletManager.updateInternalWalletBalance(id, parseFloat(amount));
+        console.log(`Funding wallet ${id} with amount ${amount}`);
+        
+        // Use fundInternalWallet which is available in both test setups
+        const updatedWallet = await walletManager.fundInternalWallet(id, parseFloat(amount));
         
         // Trigger reconciliation to update the base wallet balance
         try {
@@ -202,6 +205,8 @@ function registerEmployeePayrollExtension(app, authenticateJWT, dependencies) {
         
         res.json(updatedWallet);
       } catch (error) {
+        console.error(`Error funding wallet: ${error.message}`);
+        console.error(error.stack);
         res.status(400).json({ error: error.message });
       }
     } catch (error) {
@@ -293,6 +298,156 @@ function registerEmployeePayrollExtension(app, authenticateJWT, dependencies) {
       const payments = JSON.parse(result.toString());
       
       res.json(payments);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  /**
+   * Create or update payroll configuration
+   * POST /api/payroll-config
+   */
+  app.post('/api/payroll-config', authenticateJWT, async (req, res) => {
+    try {
+      const { payrollCycle, payrollDay, employeePayments } = req.body;
+      
+      if (!payrollCycle || !payrollDay || !employeePayments) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Submit the payroll configuration to the Fabric network
+      const result = await fabricClient.submitTransaction(
+        'updatePayrollConfiguration',
+        payrollCycle,
+        payrollDay.toString(),
+        JSON.stringify(employeePayments)
+      );
+      
+      const payrollConfig = JSON.parse(result.toString());
+      
+      res.json(payrollConfig);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  /**
+   * Update payroll configuration
+   * PUT /api/payroll-config
+   */
+  app.put('/api/payroll-config', authenticateJWT, async (req, res) => {
+    try {
+      const { payrollCycle, payrollDay, employeePayments } = req.body;
+      
+      if (!payrollCycle || !payrollDay || !employeePayments) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Submit the payroll configuration to the Fabric network
+      const result = await fabricClient.submitTransaction(
+        'updatePayrollConfiguration',
+        payrollCycle,
+        payrollDay.toString(),
+        JSON.stringify(employeePayments)
+      );
+      
+      const payrollConfig = JSON.parse(result.toString());
+      
+      res.json(payrollConfig);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  /**
+   * Process payroll
+   * POST /api/process-payroll
+   */
+  app.post('/api/process-payroll', authenticateJWT, async (req, res) => {
+    try {
+      const { employerWalletId, payrollDate } = req.body;
+      
+      if (!employerWalletId) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Get the employer wallet
+      const employerWallet = await walletManager.getInternalWallet(employerWalletId);
+      
+      if (!employerWallet) {
+        return res.status(404).json({ error: 'Employer wallet not found' });
+      }
+      
+      // Process the payroll
+      const result = await fabricClient.submitTransaction(
+        'processPayroll',
+        employerWalletId,
+        payrollDate || new Date().toISOString().split('T')[0]
+      );
+      
+      const payroll = JSON.parse(result.toString());
+      
+      res.json(payroll);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  /**
+   * Withdraw from an internal wallet to an external address
+   * POST /api/internal-wallets/:id/withdraw
+   */
+  app.post('/api/internal-wallets/:id/withdraw', authenticateJWT, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { toAddress, amount, fee } = req.body;
+      
+      if (!toAddress || !amount) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Get the internal wallet
+      const internalWallet = await walletManager.getInternalWallet(id);
+      
+      if (!internalWallet) {
+        return res.status(404).json({ error: 'Internal wallet not found' });
+      }
+      
+      // Check if this is a base internal wallet
+      if (internalWallet.metadata && internalWallet.metadata.isBaseWallet) {
+        return res.status(400).json({
+          error: 'Cannot withdraw from a base internal wallet',
+          messages: [
+            {
+              type: 'error',
+              code: 'ERROR_006',
+              message: 'Cannot withdraw from a base internal wallet',
+              data: {
+                walletId: id,
+                isBaseWallet: true
+              },
+              timestamp: new Date().toISOString()
+            }
+          ]
+        });
+      }
+      
+      // Withdraw from the internal wallet
+      try {
+        const withdrawal = await walletManager.withdrawFromInternalWallet(id, toAddress, parseFloat(amount), parseFloat(fee || 0.0001));
+        
+        // Trigger reconciliation to update the base wallet balance
+        try {
+          await walletManager.reconcileBaseInternalWallet(internalWallet.blockchain, internalWallet.primaryWalletName);
+        } catch (reconciliationError) {
+          console.warn(`Failed to reconcile base internal wallet after withdrawal: ${reconciliationError.message}`);
+          // Continue with the operation even if reconciliation fails
+        }
+        
+        res.json(withdrawal);
+      } catch (error) {
+        res.status(400).json({ error: error.message });
+      }
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
