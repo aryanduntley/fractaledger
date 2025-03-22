@@ -751,5 +751,334 @@ class LitecoinTransceiver extends UTXOTransceiver {
 module.exports = LitecoinTransceiver;</code></pre>
       </div>
     </div>
+
+	<div class="tab-content" id="dogecoin-tab">
+      <h3>Dogecoin Transceiver Example</h3>
+      <p>This example uses the Dogechain API to interact with the Dogecoin network.</p>
+      <div class="code-block">
+        <pre><code>const axios = require('axios');
+const { UTXOTransceiver } = require('fractaledger');
+
+class DogecoinTransceiver extends UTXOTransceiver {
+  constructor(config = {}) {
+    super(config);
     
-    <div class="tab-content" i
+    // Dogecoin-specific configuration
+    this.apiUrl = config.apiUrl || 'https://dogechain.info/api/v1';
+    this.network = config.network || 'mainnet';
+    
+    // Use testnet API if network is testnet
+    if (this.network === 'testnet') {
+      this.apiUrl = 'https://dogechain.info/api/v1/testnet';
+    }
+    
+    this.monitoringIntervals = {};
+    this.processedTransactions = new Set();
+    
+    this.logger.info(`Dogecoin Transceiver initialized with API URL: ${this.apiUrl}`);
+  }
+  
+  // Implementation of required methods...
+}
+
+module.exports = DogecoinTransceiver;</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="next-steps">
+  <h2>Next Steps</h2>
+  <p>Now that you understand how to implement and configure transceivers, you can explore more specific topics:</p>
+  <div class="next-steps-grid">
+    <a href="{{ '/chaincode' | relative_url }}" class="next-step-card">
+      <div class="next-step-icon">
+        <i class="fas fa-code"></i>
+      </div>
+      <div class="next-step-content">
+        <h3>Chaincode Development</h3>
+        <p>Learn how to develop custom chaincode for your specific business logic.</p>
+      </div>
+    </a>
+    
+    <a href="{{ '/advanced-features' | relative_url }}" class="next-step-card">
+      <div class="next-step-icon">
+        <i class="fas fa-rocket"></i>
+      </div>
+      <div class="next-step-content">
+        <h3>Advanced Features</h3>
+        <p>Explore advanced features like internal transfers, base wallet protection, and more.</p>
+      </div>
+    </a>
+    
+    <a href="{{ '/extending' | relative_url }}" class="next-step-card">
+      <div class="next-step-icon">
+        <i class="fas fa-puzzle-piece"></i>
+      </div>
+      <div class="next-step-content">
+        <h3>Extending FractaLedger</h3>
+        <p>Learn about all the ways you can extend and customize FractaLedger.</p>
+      </div>
+    </a>
+  </div>
+</div>
+
+<style>
+  /* Transceivers Styles */
+  .transceivers-header {
+    margin-bottom: 30px;
+  }
+  
+  .lead {
+    font-size: 1.2em;
+    color: var(--text-light);
+    margin-bottom: 20px;
+  }
+  
+  .toc-container {
+    background-color: var(--background-alt);
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+  }
+  
+  .toc h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+  
+  .toc ul {
+    margin-bottom: 0;
+  }
+  
+  .content-section {
+    margin-bottom: 40px;
+  }
+  
+  .architecture-diagram {
+    margin: 20px 0;
+    text-align: center;
+  }
+  
+  .diagram-fallback {
+    background-color: var(--code-background);
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    overflow-x: auto;
+    text-align: left;
+  }
+  
+  .diagram-fallback pre {
+    margin: 0;
+    white-space: pre;
+    font-family: monospace;
+  }
+  
+  .method-card {
+    background-color: white;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  .method-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .method-icon {
+    font-size: 2em;
+    color: var(--primary-color);
+    margin-right: 15px;
+  }
+  
+  .method-content h4 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+  
+  .code-block {
+    background-color: var(--code-background);
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    overflow-x: auto;
+  }
+  
+  .code-block pre {
+    margin: 0;
+  }
+  
+  .step {
+    display: flex;
+    margin-bottom: 20px;
+  }
+  
+  .step-number {
+    width: 30px;
+    height: 30px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 15px;
+    flex-shrink: 0;
+  }
+  
+  .step-content {
+    flex-grow: 1;
+  }
+  
+  .example-tabs {
+    margin-top: 20px;
+  }
+  
+  .tab-headers {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+  }
+  
+  .tab-header {
+    padding: 10px 15px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--text-light);
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+  }
+  
+  .tab-header.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+  }
+  
+  .tab-content {
+    display: none;
+  }
+  
+  .tab-content.active {
+    display: block;
+  }
+  
+  .next-steps {
+    background-color: var(--background-alt);
+    padding: 30px;
+    border-radius: 5px;
+    margin-top: 40px;
+  }
+  
+  .next-steps h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .next-steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  
+  .next-step-card {
+    background-color: white;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: flex-start;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .next-step-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+  }
+  
+  .next-step-icon {
+    font-size: 2em;
+    color: var(--primary-color);
+    margin-right: 15px;
+    flex-shrink: 0;
+  }
+  
+  .next-step-content {
+    flex-grow: 1;
+  }
+  
+  .next-step-content h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .next-step-content p {
+    margin-bottom: 0;
+    color: var(--text-light);
+  }
+  
+  /* Responsive Styles */
+  @media (max-width: 768px) {
+    .next-steps-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .step {
+      flex-direction: column;
+    }
+    
+    .step-number {
+      margin-bottom: 10px;
+    }
+    
+    .tab-headers {
+      flex-wrap: wrap;
+    }
+    
+    .tab-header {
+      flex-grow: 1;
+      text-align: center;
+    }
+    
+    .next-step-card {
+      flex-direction: column;
+    }
+    
+    .next-step-icon {
+      margin-right: 0;
+      margin-bottom: 10px;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabHeaders = document.querySelectorAll('.tab-header');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabHeaders.forEach(header => {
+      header.addEventListener('click', function() {
+        // Remove active class from all headers and contents
+        tabHeaders.forEach(h => h.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked header and corresponding content
+        header.classList.add('active');
+        const tabId = header.getAttribute('data-tab');
+        document.getElementById(`${tabId}-tab`).classList.add('active');
+      });
+    });
+  });
+</script>
+

@@ -865,4 +865,363 @@ title: API Reference
       <span class="method post">POST</span>
       <span class="path">/api/reconciliation/wallet/:blockchain/:name</span>
     </div>
-    <p>Manually trigger reconciliation for a specific
+    <p>Manually trigger reconciliation for a specific wallet.</p>
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>blockchain</code> - The blockchain type (e.g., bitcoin, litecoin)</li>
+      <li><code>name</code> - The wallet name</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "reconciliation": {
+    "blockchain": "bitcoin",
+    "walletName": "btc_wallet_1",
+    "primaryWalletBalance": 1.5,
+    "aggregateInternalBalance": 1.5,
+    "discrepancy": 0,
+    "timestamp": "2025-03-13T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_012",
+      "message": "Reconciliation completed successfully",
+      "data": {
+        "blockchain": "bitcoin",
+        "walletName": "btc_wallet_1",
+        "discrepancy": 0
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+</div>
+
+<div class="api-section" id="merchant-fee-endpoints">
+  <h2>Merchant Fee Endpoints</h2>
+  <p>These endpoints are available when using the merchant fee extension.</p>
+
+  <div class="endpoint">
+    <h3>Configure Fee Structure</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/fee-config</span>
+    </div>
+    <p>Configure the fee structure for merchant transactions.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "merchantWalletId": "internal_wallet_merchant",
+  "feePercentage": 2.5,
+  "minFee": 0.0001,
+  "maxFee": 0.01,
+  "feeCollectionWalletId": "internal_wallet_fees"
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "feeConfig": {
+    "merchantWalletId": "internal_wallet_merchant",
+    "feePercentage": 2.5,
+    "minFee": 0.0001,
+    "maxFee": 0.01,
+    "feeCollectionWalletId": "internal_wallet_fees"
+  }
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Process Merchant Transaction</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/transactions/merchant</span>
+    </div>
+    <p>Process a merchant transaction with automatic fee calculation and distribution.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "customerWalletId": "internal_wallet_customer",
+  "merchantWalletId": "internal_wallet_merchant",
+  "amount": 0.5,
+  "memo": "Payment for services",
+  "metadata": {
+    "orderId": "order_123",
+    "productId": "product_456"
+  }
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "transaction": {
+    "id": "tx_123",
+    "customerWalletId": "internal_wallet_customer",
+    "merchantWalletId": "internal_wallet_merchant",
+    "amount": 0.5,
+    "fee": 0.0125,
+    "netAmount": 0.4875,
+    "memo": "Payment for services",
+    "metadata": {
+      "orderId": "order_123",
+      "productId": "product_456"
+    },
+    "timestamp": "2025-03-13T12:00:00Z"
+  }
+}</code></pre>
+  </div>
+</div>
+
+<div class="api-section" id="employee-payroll-endpoints">
+  <h2>Employee Payroll Endpoints</h2>
+  <p>These endpoints are available when using the employee payroll extension.</p>
+
+  <div class="endpoint">
+    <h3>Register Employee</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/employees</span>
+    </div>
+    <p>Register a new employee with the payroll system.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "employeeId": "emp_123",
+  "name": "John Doe",
+  "internalWalletId": "internal_wallet_emp_123",
+  "salary": 0.5,
+  "paymentFrequency": "monthly",
+  "metadata": {
+    "department": "Engineering",
+    "position": "Software Developer"
+  }
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "employee": {
+    "employeeId": "emp_123",
+    "name": "John Doe",
+    "internalWalletId": "internal_wallet_emp_123",
+    "salary": 0.5,
+    "paymentFrequency": "monthly",
+    "metadata": {
+      "department": "Engineering",
+      "position": "Software Developer"
+    },
+    "createdAt": "2025-03-13T12:00:00Z"
+  }
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Process Payroll</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/payroll/process</span>
+    </div>
+    <p>Process payroll for all registered employees or a specific employee.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "employeeId": "emp_123",  // Optional, if not provided, process for all employees
+  "payrollDate": "2025-03-31",
+  "memo": "March 2025 Salary"
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "payroll": {
+    "id": "payroll_123",
+    "date": "2025-03-31",
+    "totalAmount": 0.5,
+    "employeeCount": 1,
+    "transactions": [
+      {
+        "employeeId": "emp_123",
+        "name": "John Doe",
+        "internalWalletId": "internal_wallet_emp_123",
+        "amount": 0.5,
+        "memo": "March 2025 Salary",
+        "timestamp": "2025-03-13T12:00:00Z"
+      }
+    ]
+  }
+}</code></pre>
+  </div>
+</div>
+
+<div class="api-section" id="error-handling">
+  <h2>Error Handling</h2>
+  <p>FractaLedger API uses a consistent error format across all endpoints. When an error occurs, the API returns a JSON response with an error message and code.</p>
+
+  <h3>Error Response Format</h3>
+  <pre><code>{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {
+      // Additional error details (optional)
+    }
+  }
+}</code></pre>
+
+  <h3>Common Error Codes</h3>
+  <table class="error-codes">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>AUTH_001</td>
+        <td>Authentication failed. Invalid credentials.</td>
+      </tr>
+      <tr>
+        <td>AUTH_002</td>
+        <td>JWT token expired.</td>
+      </tr>
+      <tr>
+        <td>AUTH_003</td>
+        <td>Insufficient permissions.</td>
+      </tr>
+      <tr>
+        <td>WALLET_001</td>
+        <td>Wallet not found.</td>
+      </tr>
+      <tr>
+        <td>WALLET_002</td>
+        <td>Invalid wallet address format.</td>
+      </tr>
+      <tr>
+        <td>INTERNAL_WALLET_001</td>
+        <td>Internal wallet not found.</td>
+      </tr>
+      <tr>
+        <td>INTERNAL_WALLET_002</td>
+        <td>Insufficient balance in internal wallet.</td>
+      </tr>
+      <tr>
+        <td>TX_001</td>
+        <td>Transaction failed to broadcast.</td>
+      </tr>
+      <tr>
+        <td>TX_002</td>
+        <td>Invalid transaction format.</td>
+      </tr>
+      <tr>
+        <td>CHAINCODE_001</td>
+        <td>Chaincode deployment failed.</td>
+      </tr>
+      <tr>
+        <td>CHAINCODE_002</td>
+        <td>Chaincode execution failed.</td>
+      </tr>
+      <tr>
+        <td>SERVER_001</td>
+        <td>Internal server error.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<style>
+  /* API Reference Styles */
+  .api-header {
+    margin-bottom: 30px;
+  }
+
+  .api-description {
+    font-size: 1.2em;
+    color: var(--text-light);
+    margin-bottom: 20px;
+  }
+
+  .api-toc {
+    background-color: var(--background-alt);
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+  }
+
+  .api-toc h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+
+  .api-toc ul {
+    margin-bottom: 0;
+  }
+
+  .api-section {
+    margin-bottom: 40px;
+  }
+
+  .endpoint {
+    background-color: white;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .method {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 3px;
+    margin-right: 10px;
+    color: white;
+  }
+
+  .get {
+    background-color: #61affe;
+  }
+
+  .post {
+    background-color: #49cc90;
+  }
+
+  .put {
+    background-color: #fca130;
+  }
+
+  .delete {
+    background-color: #f93e3e;
+  }
+
+  .path {
+    font-family: monospace;
+    font-size: 1.1em;
+  }
+
+  .error-codes {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+
+  .error-codes th, .error-codes td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .error-codes th {
+    background-color: var(--background-alt);
+    font-weight: bold;
+  }
+</style>
+
