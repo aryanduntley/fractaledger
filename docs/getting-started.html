@@ -15,7 +15,7 @@ title: Getting Started
       <li><a href="#prerequisites">Prerequisites</a></li>
       <li><a href="#installation">Installation</a></li>
       <li><a href="#configuration">Configuration</a></li>
-      <li><a href="#hyperledger-setup">Hyperledger Fabric Setup</a></li>
+      <li><a href="#configuration-setup">Configuration Setup</a></li>
       <li><a href="#first-steps">First Steps</a></li>
       <li><a href="#troubleshooting">Troubleshooting</a></li>
     </ul>
@@ -56,29 +56,14 @@ npm --version</code></pre>
   
   <div class="prerequisite-card">
     <div class="prerequisite-icon">
-      <i class="fab fa-docker"></i>
-    </div>
-    <div class="prerequisite-content">
-      <h3>Docker and Docker Compose</h3>
-      <p>Required for running Hyperledger Fabric components. You can download Docker from <a href="https://www.docker.com/get-started" target="_blank">docker.com</a>.</p>
-      <div class="code-block">
-        <pre><code># Check your Docker version
-docker --version
-docker-compose --version</code></pre>
-      </div>
-    </div>
-  </div>
-  
-  <div class="prerequisite-card">
-    <div class="prerequisite-icon">
       <i class="fas fa-code"></i>
     </div>
     <div class="prerequisite-content">
-      <h3>Go Programming Language (v1.14 or later)</h3>
-      <p>Required for Hyperledger Fabric chaincode development. You can download Go from <a href="https://golang.org/dl/" target="_blank">golang.org</a>.</p>
+      <h3>Git</h3>
+      <p>Required for version control and cloning the repository. You can download Git from <a href="https://git-scm.com/downloads" target="_blank">git-scm.com</a>.</p>
       <div class="code-block">
-        <pre><code># Check your Go version
-go version</code></pre>
+        <pre><code># Check your Git version
+git --version</code></pre>
       </div>
     </div>
   </div>
@@ -236,11 +221,9 @@ cp .env.example .env</code></pre>
       }
     }
   ],
-  "hyperledger": {
-    "networkConfig": {
-      "channelName": "fractaledger-channel",
-      "chaincodeName": "fractaledger-chaincode"
-    }
+  "api": {
+    "port": 3000,
+    "host": "localhost"
   }
 }</code></pre>
   </div>
@@ -250,10 +233,6 @@ cp .env.example .env</code></pre>
   <div class="code-block">
     <pre><code># Bitcoin wallet secrets
 BTC_WALLET_1_SECRET=your-private-key-or-seed-phrase
-
-# Hyperledger Fabric credentials
-FABRIC_ADMIN_USER=admin
-FABRIC_ADMIN_PASSWORD=adminpw
 
 # API configuration
 JWT_SECRET=your-jwt-secret
@@ -265,75 +244,85 @@ API_PORT=3000</code></pre>
   </div>
 </div>
 
-<div class="content-section" id="hyperledger-setup">
-  <h2>Hyperledger Fabric Setup</h2>
-  <p>FractaLedger requires Hyperledger Fabric as its internal ledger. While the application handles much of the Fabric interaction, you'll need to set up the Fabric network first.</p>
+<div class="content-section" id="configuration-setup">
+  <h2>Configuration Setup</h2>
+  <p>FractaLedger requires proper configuration to connect to blockchain networks and manage wallets. This section will guide you through setting up the necessary configuration files.</p>
   
-  <h3>Setting Up Hyperledger Fabric</h3>
+  <h3>Setting Up Configuration Files</h3>
   
   <div class="step">
     <div class="step-number">1</div>
     <div class="step-content">
-      <h4>Install Fabric Prerequisites</h4>
-      <p>Ensure you have Docker, Docker Compose, and Go installed as mentioned in the prerequisites section.</p>
+      <h4>Create Configuration Files</h4>
+      <p>After installing FractaLedger, you need to create configuration files based on the provided templates:</p>
+      <div class="code-block">
+        <pre><code># Copy the configuration template
+cp fractaledger-template.json fractaledger.json
+
+# Copy the environment variables template
+cp .env.example .env</code></pre>
+      </div>
     </div>
   </div>
   
   <div class="step">
     <div class="step-number">2</div>
     <div class="step-content">
-      <h4>Download Fabric Binaries and Docker Images</h4>
+      <h4>Edit Configuration Files</h4>
+      <p>Edit the <code>fractaledger.json</code> file to configure your blockchain connections and wallet settings:</p>
       <div class="code-block">
-        <pre><code>curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.2.0 1.4.9</code></pre>
+        <pre><code>{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "YOUR_WALLET_ADDRESS",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./transceivers/utxo-transceiver.js",
+        "config": {
+          "apiUrl": "https://blockstream.info/api",
+          "monitoringInterval": 60000
+        }
+      }
+    }
+  ],
+  "api": {
+    "port": 3000,
+    "host": "localhost"
+  }
+}</code></pre>
       </div>
-      <p>This command downloads the Fabric binaries (fabric-ca-client, peer, orderer) and Docker images for Fabric version 2.2.0 and CA version 1.4.9.</p>
     </div>
   </div>
   
   <div class="step">
     <div class="step-number">3</div>
     <div class="step-content">
-      <h4>Start the Fabric Test Network</h4>
+      <h4>Set Environment Variables</h4>
+      <p>Edit the <code>.env</code> file to set your wallet secrets and other sensitive information:</p>
       <div class="code-block">
-        <pre><code>cd fabric-samples/test-network
-./network.sh up createChannel -c fractaledger-channel</code></pre>
+        <pre><code># Wallet secrets
+BTC_WALLET_1_SECRET=your_wallet_private_key_or_seed
+
+# API configuration
+JWT_SECRET=your_jwt_secret
+API_PORT=3000</code></pre>
       </div>
-      <p>This command starts the Fabric test network and creates a channel named "fractaledger-channel".</p>
+      <p><strong>Important:</strong> Never commit your <code>.env</code> file to version control. It contains sensitive information that should be kept secure.</p>
     </div>
   </div>
   
   <div class="step">
     <div class="step-number">4</div>
     <div class="step-content">
-      <h4>Generate Connection Profiles</h4>
-      <p>You'll need to generate connection profiles for your Fabric network. The exact process depends on your network setup, but for the test network, you can use the provided scripts:</p>
+      <h4>Verify Configuration</h4>
+      <p>You can verify your configuration by running the following command:</p>
       <div class="code-block">
-        <pre><code>cd fabric-samples/test-network
-./organizations/ccp-generate.sh</code></pre>
+        <pre><code>npx fractaledger-verify-config</code></pre>
       </div>
-      <p>This generates connection profiles in the <code>organizations/peerOrganizations</code> directory.</p>
-    </div>
-  </div>
-  
-  <div class="step">
-    <div class="step-number">5</div>
-    <div class="step-content">
-      <h4>Configure FractaLedger</h4>
-      <p>Update the <code>hyperledger</code> section in your <code>fractaledger.json</code> file with your network details:</p>
-      <div class="code-block">
-        <pre><code>"hyperledger": {
-  "connectionProfilePath": "./connection-profile.json",
-  "channelName": "fractaledger-channel",
-  "chaincodeName": "fractaledger-chaincode",
-  "mspId": "Org1MSP",
-  "walletPath": "./wallet",
-  "caUrl": "https://localhost:7054",
-  "caName": "ca.org1.example.com",
-  "adminUserId": "admin",
-  "adminUserSecret": "adminpw",
-  "userId": "appUser"
-}</code></pre>
-      </div>
+      <p>This command checks your configuration files for errors and provides suggestions for improvement.</p>
     </div>
   </div>
 </div>
@@ -405,14 +394,13 @@ API_PORT=3000</code></pre>
   <p>Here are some common issues you might encounter and how to resolve them:</p>
   
   <div class="troubleshooting-item">
-    <h3>Connection Issues with Hyperledger Fabric</h3>
-    <p><strong>Symptom:</strong> Error messages like "Failed to connect to Fabric network" or "Channel not found".</p>
+    <h3>Configuration Issues</h3>
+    <p><strong>Symptom:</strong> Error messages like "Invalid configuration" or "Missing required configuration".</p>
     <p><strong>Solution:</strong></p>
     <ul>
-      <li>Ensure your Fabric network is running: <code>docker ps</code> should show the Fabric containers.</li>
-      <li>Check your connection profile path in <code>fractaledger.json</code>.</li>
-      <li>Verify that the channel name matches the one you created.</li>
-      <li>Check the CA URL and credentials.</li>
+      <li>Check your <code>fractaledger.json</code> file for syntax errors.</li>
+      <li>Ensure all required fields are present in your configuration.</li>
+      <li>Verify that your <code>.env</code> file contains all the required environment variables.</li>
     </ul>
   </div>
   
