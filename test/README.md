@@ -42,6 +42,13 @@ FractaLedger uses a multi-layered testing approach:
 - **api-messaging.test.js**: Tests the API messaging system
 - **new-features-integration.test.js**: Tests the integration of all new features
 
+### Test Utilities
+
+- **setup.js**: Sets up the test environment for all tests
+- **test-utils.js**: Provides common utilities for testing, including mock objects and helper functions
+- **merchant-fee-test-setup.js**: Sets up the test environment for merchant fee tests
+- **employer-test-setup.js**: Sets up the test environment for employer/employee payroll tests
+
 ## Running Tests
 
 ### Using the Test Runner Script
@@ -182,6 +189,55 @@ describe('WalletManager', () => {
   });
 });
 ```
+
+### Using Test Utilities
+
+The `test-utils.js` file provides common utilities for testing, including mock objects and helper functions. This helps reduce duplication and makes tests more maintainable.
+
+Example:
+
+```javascript
+const {
+  createMockBlockchainConnectors,
+  createMockFabricClient,
+  createMockConfig,
+  setupTestEnvironment
+} = require('./test-utils');
+
+describe('WalletManager', () => {
+  let testEnv;
+  
+  beforeEach(async () => {
+    // Set up test environment with mock objects
+    testEnv = await setupTestEnvironment({
+      blockchain: 'bitcoin',
+      walletName: 'btc_wallet_1',
+      balance: 1.5
+    });
+  });
+  
+  afterEach(async () => {
+    // Clean up test environment
+    await testEnv.destroyAllWallets();
+  });
+  
+  it('should create an internal wallet successfully', async () => {
+    // Test implementation using testEnv.mockWalletManager, testEnv.mockFabricClient, etc.
+  });
+});
+```
+
+Available utilities in `test-utils.js`:
+
+- `preciseDecimal(value, decimalPlaces)`: Helper function for precise decimal arithmetic
+- `createMockBlockchainConnectors(options)`: Creates mock blockchain connectors
+- `createMockFabricClient(internalWallets)`: Creates a mock Fabric client
+- `createMockWalletManager(options)`: Creates a mock wallet manager
+- `createMockChaincodeManager()`: Creates a mock chaincode manager
+- `createMockConfig()`: Creates a default mock config
+- `destroyAllWallets(internalWallets, mockFabricClient)`: Helper function to destroy all wallets and reset blockchain state
+- `createBaseWallet(options)`: Helper function to create a base wallet
+- `setupTestEnvironment(options)`: Sets up a complete test environment with all mock objects
 
 ### Integration Tests
 
