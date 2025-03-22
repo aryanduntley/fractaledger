@@ -1,5 +1,13 @@
 # FractaLedger
 
+![Beta Badge](https://img.shields.io/badge/status-Beta-yellowgreen)
+
+**Status: Beta Release** 🚧
+
+This is a beta version of FractaLedger. While the core functionality is in place, expect some instability, and breaking changes may occur in future releases.
+
+Please try it out, and report any bugs or feedback to help us improve it before the stable release.
+
 FractaLedger is a configurable off-chain UTXO management system that enables fractional ownership, secure fund distribution, and seamless on-chain interactions across multiple blockchains.
 
 ## Overview
@@ -600,3 +608,25 @@ npm run build
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Documentation
+
+FractaLedger provides comprehensive documentation across various files. Here's a complete list of documentation files available in the project:
+
+### Core Documentation
+- [README.md](README.md) - Main project documentation
+- [API.md](API.md) - API documentation
+- [STRUCTURE.md](STRUCTURE.md) - Project structure documentation
+
+### Component Documentation
+- [docs/BaseInternalWallet.md](docs/BaseInternalWallet.md) - Base internal wallet documentation
+- [api-extensions/README.md](api-extensions/README.md) - API extensions documentation
+- [transceivers/README.md](transceivers/README.md) - Transceivers documentation
+- [logs/README.md](logs/README.md) - Logs directory documentation
+- [test/README.md](test/README.md) - Test documentation
+
+### Chaincode Documentation
+- [src/chaincode/custom/README.md](src/chaincode/custom/README.md) - Custom chaincode documentation
+- [src/chaincode/templates/default/README.md](src/chaincode/templates/default/README.md) - Default chaincode template documentation
+- [src/chaincode/templates/merchant-fee/README.md](src/chaincode/templates/merchant-fee/README.md) - Merchant fee chaincode template documentation
+- [src/chaincode/templates/employee-payroll/README.md](src/chaincode/templates/employee-payroll/README.md) - Employee payroll chaincode template documentation

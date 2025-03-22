@@ -1,0 +1,456 @@
+---
+layout: default
+title: Home
+---
+
+<div class="hero-section">
+  <div class="hero-content">
+    <h1 class="hero-title">FractaLedger</h1>
+    <p class="hero-description">A configurable off-chain UTXO management system that enables fractional ownership, secure fund distribution, and seamless on-chain interactions across multiple blockchains.</p>
+    <div class="hero-buttons">
+      <a href="{{ '/getting-started' | relative_url }}" class="btn">Get Started</a>
+      <a href="https://github.com/yourusername/fractaledger" class="btn btn-secondary">View on GitHub</a>
+    </div>
+  </div>
+</div>
+
+<div class="features-section">
+  <h2 class="section-title">Key Features</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-wallet"></i>
+      </div>
+      <h3 class="feature-title">Bring Your Own Wallet</h3>
+      <p class="feature-description">Users provide their own UTXO-based wallet addresses and private keys, maintaining control over their funds.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-network-wired"></i>
+      </div>
+      <h3 class="feature-title">Multi-Blockchain Support</h3>
+      <p class="feature-description">Works with Bitcoin, Litecoin, Dogecoin, and other UTXO-based blockchains.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-exchange-alt"></i>
+      </div>
+      <h3 class="feature-title">Comprehensive Blockchain Interaction</h3>
+      <p class="feature-description">Broadcast transactions and monitor wallet addresses with the transceiver architecture.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-file-contract"></i>
+      </div>
+      <h3 class="feature-title">Customizable Smart Contracts</h3>
+      <p class="feature-description">Define your own fund distribution rules, fee structures, and withdrawal logic.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-server"></i>
+      </div>
+      <h3 class="feature-title">Comprehensive API</h3>
+      <p class="feature-description">Integrate with your existing applications through a RESTful API.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h3 class="feature-title">Secure by Design</h3>
+      <p class="feature-description">No traditional database, all data stored on an internal blockchain.</p>
+    </div>
+  </div>
+</div>
+
+<div class="getting-started-section">
+  <h2 class="section-title">Getting Started</h2>
+  <div class="installation-steps">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <h3 class="step-title">Install FractaLedger</h3>
+        <div class="code-block">
+          <pre><code>npm install fractaledger</code></pre>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <h3 class="step-title">Initialize a New Project</h3>
+        <div class="code-block">
+          <pre><code>npx fractaledger-init --dir my-fractaledger-project</code></pre>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <h3 class="step-title">Configure Your Project</h3>
+        <p>Edit <code>fractaledger.json</code> with your blockchain connection details and add your wallet secrets to <code>.env</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <h3 class="step-title">Start the System</h3>
+        <div class="code-block">
+          <pre><code>npm start</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="text-center mt-4">
+    <a href="{{ '/getting-started' | relative_url }}" class="btn btn-accent">Detailed Installation Guide</a>
+  </div>
+</div>
+
+<div class="documentation-section">
+  <h2 class="section-title">Documentation</h2>
+  <div class="documentation-grid">
+    <a href="{{ '/api-reference' | relative_url }}" class="doc-card">
+      <div class="doc-icon">
+        <i class="fas fa-book"></i>
+      </div>
+      <h3 class="doc-title">API Reference</h3>
+      <p class="doc-description">Complete documentation of all API endpoints.</p>
+    </a>
+    <a href="{{ '/transceivers' | relative_url }}" class="doc-card">
+      <div class="doc-icon">
+        <i class="fas fa-broadcast-tower"></i>
+      </div>
+      <h3 class="doc-title">Transceivers</h3>
+      <p class="doc-description">Learn how to implement custom transaction broadcasting and monitoring.</p>
+    </a>
+    <a href="{{ '/chaincode' | relative_url }}" class="doc-card">
+      <div class="doc-icon">
+        <i class="fas fa-code"></i>
+      </div>
+      <h3 class="doc-title">Chaincode</h3>
+      <p class="doc-description">Customize smart contracts for your specific use case.</p>
+    </a>
+    <a href="{{ '/advanced-features' | relative_url }}" class="doc-card">
+      <div class="doc-icon">
+        <i class="fas fa-rocket"></i>
+      </div>
+      <h3 class="doc-title">Advanced Features</h3>
+      <p class="doc-description">Explore internal transfers, base wallet protection, and more.</p>
+    </a>
+  </div>
+</div>
+
+<div class="use-cases-section">
+  <h2 class="section-title">Use Cases</h2>
+  <div class="use-cases-grid">
+    <div class="use-case-card">
+      <h3 class="use-case-title">Merchant Fee Collection</h3>
+      <p class="use-case-description">Take a percentage fee for facilitating cryptocurrency transfers between customers and merchants.</p>
+      <ul class="use-case-steps">
+        <li>Use the merchant fee template as a starting point</li>
+        <li>Customize the fee calculation logic to fit your fee structure</li>
+        <li>Deploy the custom chaincode</li>
+      </ul>
+    </div>
+    <div class="use-case-card">
+      <h3 class="use-case-title">Employee Payment System</h3>
+      <p class="use-case-description">Distribute funds to employees based on predefined rules and schedules.</p>
+      <ul class="use-case-steps">
+        <li>Use the default template as a starting point</li>
+        <li>Add custom logic for salary calculation and payment scheduling</li>
+        <li>Deploy the custom chaincode</li>
+      </ul>
+    </div>
+    <div class="use-case-card">
+      <h3 class="use-case-title">Investment Fund</h3>
+      <p class="use-case-description">Manage fractional ownership of cryptocurrency investments with custom distribution rules.</p>
+      <ul class="use-case-steps">
+        <li>Use the default template as a starting point</li>
+        <li>Add custom logic for investment tracking and profit distribution</li>
+        <li>Deploy the custom chaincode</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="cta-section">
+  <div class="cta-content">
+    <h2 class="cta-title">Ready to Get Started?</h2>
+    <p class="cta-description">FractaLedger makes it easy to manage fractional ownership of UTXO-based cryptocurrencies.</p>
+    <div class="cta-buttons">
+      <a href="{{ '/getting-started' | relative_url }}" class="btn">Get Started</a>
+      <a href="https://github.com/yourusername/fractaledger" class="btn btn-secondary">View on GitHub</a>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Hero Section */
+  .hero-section {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 60px 0;
+    margin-bottom: 40px;
+    border-radius: 5px;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-size: 3em;
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+
+  .hero-description {
+    font-size: 1.2em;
+    max-width: 800px;
+    margin: 0 auto 30px;
+  }
+
+  .hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  /* Features Section */
+  .section-title {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2em;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 60px;
+  }
+
+  .feature-card {
+    background-color: white;
+    border-radius: 5px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .feature-icon {
+    font-size: 2.5em;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+  }
+
+  .feature-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+  }
+
+  .feature-description {
+    color: var(--text-light);
+    margin-bottom: 0;
+  }
+
+  /* Getting Started Section */
+  .getting-started-section {
+    margin-bottom: 60px;
+  }
+
+  .installation-steps {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .step {
+    display: flex;
+    margin-bottom: 30px;
+  }
+
+  .step-number {
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 20px;
+    flex-shrink: 0;
+  }
+
+  .step-content {
+    flex-grow: 1;
+  }
+
+  .step-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+  }
+
+  .code-block {
+    background-color: var(--code-background);
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    overflow-x: auto;
+  }
+
+  .code-block pre {
+    margin: 0;
+  }
+
+  /* Documentation Section */
+  .documentation-section {
+    margin-bottom: 60px;
+  }
+
+  .documentation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 30px;
+  }
+
+  .doc-card {
+    background-color: white;
+    border-radius: 5px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: var(--text-color);
+    text-decoration: none;
+  }
+
+  .doc-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+  }
+
+  .doc-icon {
+    font-size: 2.5em;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+  }
+
+  .doc-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+  }
+
+  .doc-description {
+    color: var(--text-light);
+    margin-bottom: 0;
+  }
+
+  /* Use Cases Section */
+  .use-cases-section {
+    margin-bottom: 60px;
+  }
+
+  .use-cases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+  }
+
+  .use-case-card {
+    background-color: white;
+    border-radius: 5px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .use-case-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+  }
+
+  .use-case-description {
+    color: var(--text-light);
+    margin-bottom: 15px;
+  }
+
+  .use-case-steps {
+    padding-left: 20px;
+  }
+
+  .use-case-steps li {
+    margin-bottom: 10px;
+  }
+
+  /* CTA Section */
+  .cta-section {
+    background-color: var(--background-alt);
+    border-radius: 5px;
+    padding: 60px 0;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .cta-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 2em;
+  }
+
+  .cta-description {
+    max-width: 600px;
+    margin: 0 auto 30px;
+    font-size: 1.1em;
+  }
+
+  .cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  /* Responsive Styles */
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2.5em;
+    }
+
+    .hero-description {
+      font-size: 1.1em;
+    }
+
+    .features-grid,
+    .documentation-grid,
+    .use-cases-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .step {
+      flex-direction: column;
+    }
+
+    .step-number {
+      margin-bottom: 15px;
+    }
+
+    .hero-buttons,
+    .cta-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .btn {
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 10px;
+    }
+  }
+</style>
