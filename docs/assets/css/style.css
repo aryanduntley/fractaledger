@@ -84,6 +84,10 @@ li {
   margin-bottom: 0.5em;
 }
 
+div.code-block {
+	max-width: 100%;
+}
+
 code {
   font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
   padding: 0.2em 0.4em;
@@ -91,6 +95,8 @@ code {
   font-size: 85%;
   background-color: var(--code-background);
   border-radius: 3px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 pre {
@@ -99,6 +105,8 @@ pre {
   padding: 16px;
   overflow: auto;
   margin-bottom: 1em;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 pre code {
@@ -107,8 +115,9 @@ pre code {
   margin: 0;
   font-size: 85%;
   word-break: normal;
-  white-space: pre;
   overflow: visible;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 blockquote {
