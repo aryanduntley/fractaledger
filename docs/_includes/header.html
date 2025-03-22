@@ -1,0 +1,33 @@
+<header class="site-header">
+    <div class="container">
+        <div class="header-content">
+            <a href="{{ '/' | relative_url }}" class="site-logo">
+                <img src="{{ '/assets/images/logo.png' | relative_url }}" alt="FractaLedger Logo">
+            </a>
+            <div class="site-title">
+                <h1><a href="{{ '/' | relative_url }}">{{ site.title }}</a></h1>
+                <p class="site-description">{{ site.description }}</p>
+            </div>
+            <nav class="site-nav">
+                <input type="checkbox" id="nav-trigger" class="nav-trigger">
+                <label for="nav-trigger">
+                    <span class="menu-icon">
+                        <i class="fas fa-bars"></i>
+                    </span>
+                </label>
+                <div class="trigger">
+                    <a class="page-link {% if page.url == '/' %}active{% endif %}" href="{{ '/' | relative_url }}">Home</a>
+                    <a class="page-link {% if page.url contains '/getting-started' %}active{% endif %}" href="{{ '/getting-started' | relative_url }}">Getting Started</a>
+                    <a class="page-link {% if page.url contains '/api-reference' %}active{% endif %}" href="{{ '/api-reference' | relative_url }}">API Reference</a>
+                    <a class="page-link {% if page.url contains '/transceivers' %}active{% endif %}" href="{{ '/transceivers' | relative_url }}">Transceivers</a>
+                    <a class="page-link {% if page.url contains '/chaincode' %}active{% endif %}" href="{{ '/chaincode' | relative_url }}">Chaincode</a>
+                    <a class="page-link {% if page.url contains '/advanced-features' %}active{% endif %}" href="{{ '/advanced-features' | relative_url }}">Advanced Features</a>
+                    <a class="page-link {% if page.url contains '/extending' %}active{% endif %}" href="{{ '/extending' | relative_url }}">Extending</a>
+                    <a href="https://github.com/yourusername/fractaledger" class="github-link" target="_blank">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
