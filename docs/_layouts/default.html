@@ -21,11 +21,27 @@
                     <div class="sidebar-content">
                         <h3>Documentation</h3>
                         <ul class="sidebar-nav">
-                            {% for item in site.navigation %}
-                            <li class="{% if page.url == item.url %}active{% endif %}">
-                                <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
+                            <li class="{% if page.url == '/' %}active{% endif %}">
+                                <a href="{{ '/' | relative_url }}">Home</a>
                             </li>
-                            {% endfor %}
+                            <li class="{% if page.url contains '/getting-started' %}active{% endif %}">
+                                <a href="{{ '/getting-started' | relative_url }}">Getting Started</a>
+                            </li>
+                            <li class="{% if page.url contains '/api-reference' %}active{% endif %}">
+                                <a href="{{ '/api-reference' | relative_url }}">API Reference</a>
+                            </li>
+                            <li class="{% if page.url contains '/transceivers' %}active{% endif %}">
+                                <a href="{{ '/transceivers' | relative_url }}">Transceivers</a>
+                            </li>
+                            <li class="{% if page.url contains '/chaincode' %}active{% endif %}">
+                                <a href="{{ '/chaincode' | relative_url }}">Chaincode</a>
+                            </li>
+                            <li class="{% if page.url contains '/advanced-features' %}active{% endif %}">
+                                <a href="{{ '/advanced-features' | relative_url }}">Advanced Features</a>
+                            </li>
+                            <li class="{% if page.url contains '/extending' %}active{% endif %}">
+                                <a href="{{ '/extending' | relative_url }}">Extending</a>
+                            </li>
                         </ul>
                         <div class="sidebar-status">
                             <span class="beta-badge">Beta</span>

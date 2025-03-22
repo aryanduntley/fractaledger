@@ -1,11 +1,11 @@
 # Jekyll configuration for FractaLedger GitHub Pages
 title: FractaLedger Documentation
 description: Comprehensive documentation for the FractaLedger system
-url: https://yourusername.github.io/fractaledger
+url: https://aryanduntley.github.io/fractaledger
 baseurl: /fractaledger
 
 # Theme settings
-theme: jekyll-theme-cayman
+# Using custom layouts instead of a theme
 markdown: kramdown
 highlighter: rouge
 
@@ -41,8 +41,8 @@ navigation:
     url: /chaincode
   - title: Advanced Features
     url: /advanced-features
-  - title: Development
-    url: /development
+  - title: Extending
+    url: /extending
 
 # Exclude files from processing
 exclude:
