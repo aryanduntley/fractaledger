@@ -37,9 +37,9 @@ The flow of operations is as follows:
 4. The transceiver monitors the blockchain for new transactions and updates the system accordingly.
 
 ```
-┌─────────────┐      ┌─────────────────┐      ┌───────────────────┐      ┌─────────────┐
+┌─────────────┐      ┌─────────────────────┐      ┌────────────────────┐      ┌─────────────┐
 │ Application │ ──▶ │ BlockchainConnector │ ──▶ │ TransceiverManager │ ──▶ │ Transceiver │
-└─────────────┘      └─────────────────┘      └───────────────────┘      └─────────────┘
+└─────────────┘      └─────────────────────┘      └────────────────────┘      └─────────────┘
                                                                                 │
                                                                                 ▼
                                                                           ┌─────────────┐
