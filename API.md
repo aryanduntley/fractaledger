@@ -457,6 +457,112 @@ Response:
 ]
 ```
 
+## Transaction Broadcasting Flow
+
+FractaLedger uses a transceiver architecture that separates transaction creation/signing from the actual blockchain interaction. This allows you to handle blockchain operations through your preferred method. The following section details the complete transaction flow from withdrawal to completion.
+
+### 1. Get Pending Transactions
+
+```
+GET /api/transactions/pending
+```
+
+Retrieves a list of transactions that are ready to be broadcast to the blockchain network. These transactions have been created and signed but not yet broadcast.
+
+**Response**
+
+```json
+{
+  "pendingTransactions": [
+    {
+      "txid": "0x1234567890abcdef",
+      "txHex": "0100000001abcdef...",
+      "blockchain": "bitcoin",
+      "primaryWalletName": "btc_wallet_1",
+      "status": "ready",
+      "timestamp": "2025-03-12T12:00:00Z",
+      "metadata": {
+        "internalWalletId": "internal_wallet_1",
+        "toAddress": "bc1q...",
+        "amount": 0.1,
+        "fee": 0.0001
+      }
+    }
+  ]
+}
+```
+
+> **Note**: The `txHex` field contains the raw transaction in hexadecimal format, which is ready to be broadcast to the blockchain network. This transaction has been fully created and signed by the system.
+
+### 2. Submit Transaction Results
+
+```
+POST /api/transactions/results
+```
+
+Submits the results of a transaction broadcast that was performed externally. This endpoint is used to update the system with the status of a transaction after it has been broadcast to the blockchain network.
+
+**Request Body**
+
+```json
+{
+  "txid": "0x1234567890abcdef",
+  "success": true,
+  "blockHeight": 700000,
+  "confirmations": 1,
+  "error": null
+}
+```
+
+**Response**
+
+```json
+{
+  "success": true,
+  "transaction": {
+    "txid": "0x1234567890abcdef",
+    "status": "confirmed",
+    "blockHeight": 700000,
+    "confirmations": 1,
+    "timestamp": "2025-03-12T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_006",
+      "message": "Transaction results recorded successfully",
+      "data": {
+        "txid": "0x1234567890abcdef",
+        "status": "confirmed"
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}
+```
+
+> **Note**: This endpoint was previously named `/api/transactions/broadcast`, which was misleading since it doesn't actually broadcast transactions but rather records the results of broadcasts performed externally.
+
+### Complete Transaction Flow
+
+1. **Transaction Creation**:
+   - When you use endpoints like `/api/transactions/withdraw`, the system creates a transaction with the specified parameters, signs it with the wallet's private key, generates the raw transaction hex, assigns a transaction ID, and stores this information in the pending transactions map.
+
+2. **Transaction Retrieval**:
+   - Your application retrieves pending transactions via `GET /api/transactions/pending`.
+
+3. **External Broadcasting**:
+   - Your application is responsible for broadcasting these transactions to the blockchain network using your own infrastructure or third-party services.
+
+4. **Result Submission**:
+   - After broadcasting, your application reports the results back to FractaLedger via `POST /api/transactions/results`.
+
+This architecture provides several benefits:
+- **Flexibility**: You can implement your own broadcasting logic.
+- **Security**: Sensitive operations like broadcasting can be handled in a controlled environment.
+- **Customization**: Different broadcasting methods can be used for different scenarios.
+- **Separation of Concerns**: Transaction creation is separate from blockchain interaction.
+
 ## Balance Reconciliation
 
 ### Get Reconciliation Configuration
