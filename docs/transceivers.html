@@ -14,795 +14,19 @@ title: Transceivers
     <ul>
       <li><a href="#overview">Overview</a></li>
       <li><a href="#transceiver-methods">Transceiver Methods</a></li>
-      <li><a href="#custom-transceivers">Custom Transceivers</a></li>
-      <li><a href="#generating-transceivers">Generating Transceivers</a></li>
-      <li><a href="#implementing-transceivers">Implementing Transceivers</a></li>
-      <li><a href="#configuration">Configuration</a></li>
-      <li><a href="#examples">Examples</a></li>
+      <li><a href="#monitoring">Wallet Monitoring</a></li>
+      <li><a href="#automatic-tunnel">Setting Up an Automatic Tunnel</a></li>
     </ul>
   </div>
 </div>
 
-<div class="content-section" id="overview">
-  <h2>Overview</h2>
-  <p>FractaLedger uses a flexible transceiver architecture that handles both transaction broadcasting and wallet address monitoring. This approach completely separates transaction creation/signing from the broadcasting and monitoring mechanisms, allowing you to use your existing infrastructure for blockchain interactions.</p>
-  
-  <div class="architecture-diagram">
-    <img src="{{ '/assets/images/transceiver-architecture.png' | relative_url }}" alt="Transceiver Architecture Diagram" onerror="this.style.display='none'">
-    <div class="diagram-fallback">
-      <pre>
-┌─────────────────────────────────────────────────────────────┐
-│                      FractaLedger Core                       │
-│                                                             │
-│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
-│  │ Transaction   │    │ Blockchain    │    │ Wallet       │ │
-│  │ Builder       │───▶│ Connector     │───▶│ Manager      │ │
-│  └───────────────┘    └───────────────┘    └──────────────┘ │
-│                              │                              │
-└──────────────────────────────┼──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Transceiver Manager                       │
-│                                                             │
-│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
-│  │ Callback      │    │ Event         │    │ API          │ │
-│  │ Method        │    │ Method        │    │ Method       │ │
-│  └───────────────┘    └───────────────┘    └──────────────┘ │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Custom Transceivers                       │
-│                                                             │
-│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
-│  │ Bitcoin       │    │ Litecoin      │    │ Dogecoin     │ │
-│  │ Transceiver   │    │ Transceiver   │    │ Transceiver  │ │
-│  └───────────────┘    └───────────────┘    └──────────────┘ │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Blockchain Networks                       │
-│                                                             │
-│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
-│  │ Bitcoin       │    │ Litecoin      │    │ Dogecoin     │ │
-│  │ Network       │    │ Network       │    │ Network      │ │
-│  └───────────────┘    └───────────────┘    └──────────────┘ │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-      </pre>
-    </div>
-  </div>
-  
-  <p>The transceiver architecture provides several benefits:</p>
-  <ul>
-    <li><strong>Flexibility</strong>: You can choose how to broadcast transactions and monitor wallet addresses based on your specific needs.</li>
-    <li><strong>Extensibility</strong>: You can easily add support for new blockchains by implementing new transceivers.</li>
-    <li><strong>Separation of Concerns</strong>: Transaction creation/signing is separated from broadcasting and monitoring, allowing for better modularity.</li>
-    <li><strong>Integration</strong>: You can integrate with your existing blockchain infrastructure or third-party services.</li>
-  </ul>
-</div>
+{% include transceivers/transceiver_overview.html %}
 
-<div class="content-section" id="transceiver-methods">
-  <h2>Transceiver Methods</h2>
-  <p>FractaLedger supports four transceiver methods, each with its own advantages and use cases:</p>
-  
-  <div class="method-card">
-    <div class="method-header">
-      <div class="method-icon">
-        <i class="fas fa-code"></i>
-      </div>
-      <h3>Callback Method</h3>
-    </div>
-    <div class="method-content">
-      <p>Uses a custom transceiver module to broadcast transactions and monitor wallet addresses. This method provides maximum flexibility and control.</p>
-      <h4>When to Use</h4>
-      <ul>
-        <li>You need complete control over how transactions are broadcasted</li>
-        <li>You want to implement custom monitoring logic</li>
-        <li>You need to integrate with specific blockchain APIs or services</li>
-      </ul>
-      <h4>Configuration Example</h4>
-      <div class="code-block">
-        <pre><code>{
-  "name": "btc_wallet_1",
-  "network": "mainnet",
-  "walletAddress": "bc1q...",
-  "secretEnvVar": "BTC_WALLET_1_SECRET",
-  "transceiver": {
-    "method": "callback",
-    "module": "./transceivers/utxo-transceiver.js",
-    "config": {
-      "apiUrl": "https://blockstream.info/api",
-      "monitoringInterval": 60000
-    }
-  }
-}</code></pre>
-      </div>
-    </div>
-  </div>
-  
-  <div class="method-card">
-    <div class="method-header">
-      <div class="method-icon">
-        <i class="fas fa-broadcast-tower"></i>
-      </div>
-      <h3>Event Method</h3>
-    </div>
-    <div class="method-content">
-      <p>Emits events with transaction data and wallet address updates for external listeners. This method is useful for integrating with event-driven architectures.</p>
-      <h4>When to Use</h4>
-      <ul>
-        <li>You have an existing event-driven system</li>
-        <li>You want to handle transaction broadcasting and monitoring in a separate process</li>
-        <li>You need to notify multiple systems about transactions and wallet updates</li>
-      </ul>
-      <h4>Configuration Example</h4>
-      <div class="code-block">
-        <pre><code>{
-  "name": "btc_wallet_2",
-  "network": "mainnet",
-  "walletAddress": "bc1q...",
-  "secretEnvVar": "BTC_WALLET_2_SECRET",
-  "transceiver": {
-    "method": "event",
-    "eventNamespace": "transactions"
-  }
-}</code></pre>
-      </div>
-      <h4>Event Handling Example</h4>
-      <div class="code-block">
-        <pre><code>const fractaledger = require('fractaledger');
+{% include transceivers/transceiver_methods.html %}
 
-// Listen for transaction broadcast events
-fractaledger.events.on('transactions:broadcast', (txData) => {
-  console.log('Transaction to broadcast:', txData);
-  // Broadcast the transaction using your preferred method
-  // ...
-  
-  // Notify FractaLedger about the broadcast result
-  fractaledger.events.emit('transactions:broadcast:result', {
-    txid: 'abcdef1234567890...',
-    success: true,
-    data: txData
-  });
-});
+{% include transceivers/transceiver_monitoring.html %}
 
-// Listen for wallet monitoring events
-fractaledger.events.on('transactions:monitor', (walletData) => {
-  console.log('Wallet to monitor:', walletData);
-  // Set up monitoring for the wallet using your preferred method
-  // ...
-});</code></pre>
-      </div>
-    </div>
-  </div>
-  
-  <div class="method-card">
-    <div class="method-header">
-      <div class="method-icon">
-        <i class="fas fa-server"></i>
-      </div>
-      <h3>API Method</h3>
-    </div>
-    <div class="method-content">
-      <p>Makes transactions and wallet address updates available through API endpoints. This method is useful for web applications and services.</p>
-      <h4>When to Use</h4>
-      <ul>
-        <li>You want to handle transaction broadcasting through HTTP requests</li>
-        <li>You have a separate service that will poll for transactions to broadcast</li>
-        <li>You want to integrate with a web application</li>
-      </ul>
-      <h4>Configuration Example</h4>
-      <div class="code-block">
-        <pre><code>{
-  "name": "btc_wallet_3",
-  "network": "mainnet",
-  "walletAddress": "bc1q...",
-  "secretEnvVar": "BTC_WALLET_3_SECRET",
-  "transceiver": {
-    "method": "api",
-    "apiEndpoint": "/api/transactions"
-  }
-}</code></pre>
-      </div>
-      <h4>API Endpoints</h4>
-      <ul>
-        <li><code>GET /api/transactions/pending</code> - Get pending transactions to broadcast</li>
-        <li><code>POST /api/transactions/results</code> - Submit broadcast results</li>
-        <li><code>GET /api/wallets/monitoring</code> - Get wallets to monitor</li>
-        <li><code>POST /api/wallets/:id/transactions</code> - Submit wallet transactions</li>
-      </ul>
-      
-      <h4>Transaction Flow</h4>
-      <p>When using the API method, the transaction flow is as follows:</p>
-      <ol>
-        <li><strong>Transaction Creation</strong>: When you use endpoints like <code>/api/transactions/withdraw</code>, the system creates a transaction with the specified parameters, signs it with the wallet's private key, generates the raw transaction hex, assigns a transaction ID, and stores this information in the pending transactions map.</li>
-        <li><strong>Transaction Retrieval</strong>: Your application retrieves pending transactions via <code>GET /api/transactions/pending</code>.</li>
-        <li><strong>External Broadcasting</strong>: Your application is responsible for broadcasting these transactions to the blockchain network using your own infrastructure or third-party services.</li>
-        <li><strong>Result Submission</strong>: After broadcasting, your application reports the results back to FractaLedger via <code>POST /api/transactions/results</code>.</li>
-      </ol>
-      
-      <p>This architecture provides several benefits:</p>
-      <ul>
-        <li><strong>Flexibility</strong>: You can implement your own broadcasting logic.</li>
-        <li><strong>Security</strong>: Sensitive operations like broadcasting can be handled in a controlled environment.</li>
-        <li><strong>Customization</strong>: Different broadcasting methods can be used for different scenarios.</li>
-        <li><strong>Separation of Concerns</strong>: Transaction creation is separate from blockchain interaction.</li>
-      </ul>
-    </div>
-  </div>
-  
-  <div class="method-card">
-    <div class="method-header">
-      <div class="method-icon">
-        <i class="fas fa-undo"></i>
-      </div>
-      <h3>Return Method</h3>
-    </div>
-    <div class="method-content">
-      <p>Simply returns transaction data and wallet address updates without broadcasting or monitoring. This method is useful for manual broadcasting or testing.</p>
-      <h4>When to Use</h4>
-      <ul>
-        <li>You want to manually broadcast transactions</li>
-        <li>You're testing the system without actually interacting with blockchains</li>
-        <li>You want to inspect transaction data before broadcasting</li>
-      </ul>
-      <h4>Configuration Example</h4>
-      <div class="code-block">
-        <pre><code>{
-  "name": "btc_wallet_4",
-  "network": "mainnet",
-  "walletAddress": "bc1q...",
-  "secretEnvVar": "BTC_WALLET_4_SECRET",
-  "transceiver": {
-    "method": "return"
-  }
-}</code></pre>
-      </div>
-      <h4>Usage Example</h4>
-      <div class="code-block">
-        <pre><code>const fractaledger = require('fractaledger');
-
-// Create a transaction
-const txData = await fractaledger.createTransaction({
-  fromWalletId: 'btc_wallet_4',
-  toAddress: 'bc1q...',
-  amount: 0.1,
-  fee: 0.0001
-});
-
-console.log('Transaction data:', txData);
-// Manually broadcast the transaction using your preferred method
-// ...</code></pre>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="content-section" id="custom-transceivers">
-  <h2>Custom Transceivers</h2>
-  <p>You can create custom transceiver modules to implement your own transaction broadcasting and wallet address monitoring logic. These modules should implement the <code>UTXOTransceiver</code> interface, which includes methods for:</p>
-  
-  <ul>
-    <li>Broadcasting transactions</li>
-    <li>Monitoring wallet addresses</li>
-    <li>Getting wallet balances</li>
-    <li>Getting transaction history</li>
-    <li>Getting UTXOs (Unspent Transaction Outputs)</li>
-  </ul>
-  
-  <h3>UTXOTransceiver Interface</h3>
-  <p>Here's the interface that your custom transceiver should implement:</p>
-  
-  <div class="code-block">
-    <pre><code>class UTXOTransceiver {
-  /**
-   * Initialize the transceiver
-   * @param {Object} config Configuration options
-   */
-  constructor(config = {}) {
-    // Initialize the transceiver
-  }
-  
-  /**
-   * Broadcast a transaction to the network
-   * @param {string} txHex The raw transaction hex
-   * @param {Object} metadata Additional metadata
-   * @returns {Promise<Object>} The broadcast result
-   */
-  async broadcastTransaction(txHex, metadata = {}) {
-    // Implement transaction broadcasting
-  }
-  
-  /**
-   * Start monitoring a wallet address
-   * @param {string} address The wallet address to monitor
-   * @param {Object} options Monitoring options
-   * @returns {Promise<Object>} The monitoring result
-   */
-  async startMonitoring(address, options = {}) {
-    // Implement wallet monitoring
-  }
-  
-  /**
-   * Stop monitoring a wallet address
-   * @param {string} address The wallet address to stop monitoring
-   * @returns {Promise<Object>} The result
-   */
-  async stopMonitoring(address) {
-    // Implement stopping monitoring
-  }
-  
-  /**
-   * Get the balance of a wallet address
-   * @param {string} address The wallet address
-   * @returns {Promise<number>} The balance
-   */
-  async getBalance(address) {
-    // Implement getting balance
-  }
-  
-  /**
-   * Get the transaction history for a wallet address
-   * @param {string} address The wallet address
-   * @param {Object} options Query options
-   * @returns {Promise<Array>} The transaction history
-   */
-  async getTransactionHistory(address, options = {}) {
-    // Implement getting transaction history
-  }
-  
-  /**
-   * Get the UTXOs for a wallet address
-   * @param {string} address The wallet address
-   * @returns {Promise<Array>} The UTXOs
-   */
-  async getUTXOs(address) {
-    // Implement getting UTXOs
-  }
-}</code></pre>
-  </div>
-</div>
-
-<div class="content-section" id="generating-transceivers">
-  <h2>Generating Transceivers</h2>
-  <p>FractaLedger provides a command-line tool for generating custom transceiver implementations. This tool creates a new transceiver file based on the example transceiver, with blockchain-specific customizations.</p>
-  
-  <h3>Using the Generator</h3>
-  <div class="code-block">
-    <pre><code>npx fractaledger-generate-transceiver --type bitcoin --output ./my-transceivers</code></pre>
-  </div>
-  
-  <p>This command generates a custom transceiver implementation for Bitcoin in the <code>./my-transceivers</code> directory.</p>
-  
-  <h3>Generator Options</h3>
-  <ul>
-    <li><code>--type</code>: The blockchain type (bitcoin, litecoin, dogecoin, utxo)</li>
-    <li><code>--output</code>: The output directory for the generated transceiver</li>
-  </ul>
-  
-  <h3>Supported Blockchain Types</h3>
-  <ul>
-    <li><code>utxo</code>: Generic UTXO-based blockchain</li>
-    <li><code>bitcoin</code>: Bitcoin-specific transceiver</li>
-    <li><code>litecoin</code>: Litecoin-specific transceiver</li>
-    <li><code>dogecoin</code>: Dogecoin-specific transceiver</li>
-  </ul>
-  
-  <p>Each blockchain type includes specific customizations, such as default API URLs and network settings.</p>
-</div>
-
-<div class="content-section" id="implementing-transceivers">
-  <h2>Implementing Transceivers</h2>
-  <p>Once you've generated a transceiver file, you'll need to implement the required methods to interact with your blockchain of choice. Here's a step-by-step guide:</p>
-  
-  <div class="step">
-    <div class="step-number">1</div>
-    <div class="step-content">
-      <h4>Generate the Transceiver</h4>
-      <div class="code-block">
-        <pre><code>npx fractaledger-generate-transceiver --type bitcoin --output ./my-transceivers</code></pre>
-      </div>
-    </div>
-  </div>
-  
-  <div class="step">
-    <div class="step-number">2</div>
-    <div class="step-content">
-      <h4>Implement the Broadcasting Method</h4>
-      <p>The <code>broadcastTransaction</code> method is responsible for sending a raw transaction to the blockchain network. You'll need to implement this method to use your preferred API or service.</p>
-      <div class="code-block">
-        <pre><code>async broadcastTransaction(txHex, metadata = {}) {
-  try {
-    // Example implementation using axios to call a blockchain API
-    const response = await axios.post(`${this.apiUrl}/tx/send`, {
-      tx: txHex
-    });
-    
-    return {
-      success: true,
-      txid: response.data.txid,
-      rawResponse: response.data
-    };
-  } catch (error) {
-    this.logger.error(`Failed to broadcast transaction: ${error.message}`);
-    return {
-      success: false,
-      error: error.message,
-      rawError: error.response ? error.response.data : null
-    };
-  }
-}</code></pre>
-      </div>
-    </div>
-  </div>
-  
-  <div class="step">
-    <div class="step-number">3</div>
-    <div class="step-content">
-      <h4>Implement the Monitoring Methods</h4>
-      <p>The <code>startMonitoring</code> and <code>stopMonitoring</code> methods are responsible for setting up and tearing down monitoring for a wallet address. You'll need to implement these methods to use your preferred monitoring approach.</p>
-      <div class="code-block">
-        <pre><code>async startMonitoring(address, options = {}) {
-  try {
-    // Example implementation using a polling approach
-    if (this.monitoringIntervals[address]) {
-      return {
-        success: true,
-        message: `Already monitoring address ${address}`,
-        isNew: false
-      };
-    }
-    
-    const interval = options.interval || this.config.monitoringInterval || 60000;
-    
-    this.monitoringIntervals[address] = setInterval(async () => {
-      try {
-        // Get the latest transactions for the address
-        const transactions = await this.getTransactionHistory(address, { limit: 10 });
-        
-        // Process new transactions
-        for (const tx of transactions) {
-          // Check if we've already processed this transaction
-          if (!this.processedTransactions.has(tx.txid)) {
-            this.processedTransactions.add(tx.txid);
-            
-            // Emit an event or callback with the transaction
-            if (this.config.onTransaction) {
-              this.config.onTransaction(tx);
-            }
-          }
-        }
-      } catch (error) {
-        this.logger.error(`Error monitoring address ${address}: ${error.message}`);
-      }
-    }, interval);
-    
-    return {
-      success: true,
-      message: `Started monitoring address ${address}`,
-      isNew: true,
-      interval
-    };
-  } catch (error) {
-    this.logger.error(`Failed to start monitoring address ${address}: ${error.message}`);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-async stopMonitoring(address) {
-  try {
-    if (!this.monitoringIntervals[address]) {
-      return {
-        success: true,
-        message: `Not monitoring address ${address}`,
-        wasMonitoring: false
-      };
-    }
-    
-    clearInterval(this.monitoringIntervals[address]);
-    delete this.monitoringIntervals[address];
-    
-    return {
-      success: true,
-      message: `Stopped monitoring address ${address}`,
-      wasMonitoring: true
-    };
-  } catch (error) {
-    this.logger.error(`Failed to stop monitoring address ${address}: ${error.message}`);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}</code></pre>
-      </div>
-    </div>
-  </div>
-  
-  <div class="step">
-    <div class="step-number">4</div>
-    <div class="step-content">
-      <h4>Implement the Query Methods</h4>
-      <p>The <code>getBalance</code>, <code>getTransactionHistory</code>, and <code>getUTXOs</code> methods are responsible for querying the blockchain for information about a wallet address. You'll need to implement these methods to use your preferred API or service.</p>
-      <div class="code-block">
-        <pre><code>async getBalance(address) {
-  try {
-    // Example implementation using axios to call a blockchain API
-    const response = await axios.get(`${this.apiUrl}/address/${address}/balance`);
-    
-    // Convert satoshis to BTC
-    return response.data.confirmed / 100000000;
-  } catch (error) {
-    this.logger.error(`Failed to get balance for address ${address}: ${error.message}`);
-    throw error;
-  }
-}
-
-async getTransactionHistory(address, options = {}) {
-  try {
-    // Example implementation using axios to call a blockchain API
-    const limit = options.limit || 100;
-    const response = await axios.get(`${this.apiUrl}/address/${address}/txs?limit=${limit}`);
-    
-    return response.data.map(tx => ({
-      txid: tx.txid,
-      blockHeight: tx.status.block_height,
-      timestamp: tx.status.block_time ? new Date(tx.status.block_time * 1000).toISOString() : null,
-      amount: this.calculateTransactionAmount(tx, address),
-      fee: tx.fee / 100000000,
-      confirmations: tx.status.confirmed ? 1 : 0,
-      type: this.determineTransactionType(tx, address)
-    }));
-  } catch (error) {
-    this.logger.error(`Failed to get transaction history for address ${address}: ${error.message}`);
-    throw error;
-  }
-}
-
-async getUTXOs(address) {
-  try {
-    // Example implementation using axios to call a blockchain API
-    const response = await axios.get(`${this.apiUrl}/address/${address}/utxo`);
-    
-    return response.data.map(utxo => ({
-      txid: utxo.txid,
-      vout: utxo.vout,
-      value: utxo.value / 100000000,
-      confirmations: utxo.status.confirmed ? 1 : 0
-    }));
-  } catch (error) {
-    this.logger.error(`Failed to get UTXOs for address ${address}: ${error.message}`);
-    throw error;
-  }
-}</code></pre>
-      </div>
-    </div>
-  </div>
-  
-  <div class="step">
-    <div class="step-number">5</div>
-    <div class="step-content">
-      <h4>Add Helper Methods</h4>
-      <p>You may need to add helper methods to support your implementation, such as methods for calculating transaction amounts or determining transaction types.</p>
-      <div class="code-block">
-        <pre><code>calculateTransactionAmount(tx, address) {
-  // Calculate the net amount for this address
-  let inputAmount = 0;
-  let outputAmount = 0;
-  
-  // Sum inputs from this address
-  for (const input of tx.vin) {
-    if (input.prevout && input.prevout.scriptpubkey_address === address) {
-      inputAmount += input.prevout.value;
-    }
-  }
-  
-  // Sum outputs to this address
-  for (const output of tx.vout) {
-    if (output.scriptpubkey_address === address) {
-      outputAmount += output.value;
-    }
-  }
-  
-  // Convert satoshis to BTC
-  return (outputAmount - inputAmount) / 100000000;
-}
-
-determineTransactionType(tx, address) {
-  // Determine if this is an incoming or outgoing transaction
-  let isInput = false;
-  let isOutput = false;
-  
-  // Check inputs
-  for (const input of tx.vin) {
-    if (input.prevout && input.prevout.scriptpubkey_address === address) {
-      isInput = true;
-      break;
-    }
-  }
-  
-  // Check outputs
-  for (const output of tx.vout) {
-    if (output.scriptpubkey_address === address) {
-      isOutput = true;
-      break;
-    }
-  }
-  
-  if (isInput && isOutput) {
-    return 'self';
-  } else if (isInput) {
-    return 'outgoing';
-  } else if (isOutput) {
-    return 'incoming';
-  } else {
-    return 'unknown';
-  }
-}</code></pre>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="content-section" id="configuration">
-  <h2>Configuration</h2>
-  <p>Once you've implemented your custom transceiver, you need to configure FractaLedger to use it. This is done in the <code>fractaledger.json</code> configuration file.</p>
-  
-  <h3>Transceiver Configuration</h3>
-  <p>Here's an example configuration for a Bitcoin wallet using a custom transceiver:</p>
-  
-  <div class="code-block">
-    <pre><code>{
-  "bitcoin": [
-    {
-      "name": "btc_wallet_1",
-      "network": "mainnet",
-      "walletAddress": "bc1q...",
-      "secretEnvVar": "BTC_WALLET_1_SECRET",
-      "transceiver": {
-        "method": "callback",
-        "module": "./my-transceivers/bitcoin-transceiver.js",
-        "config": {
-          "apiUrl": "https://blockstream.info/api",
-          "monitoringInterval": 60000,
-          "autoMonitor": true
-        }
-      }
-    }
-  ]
-}</code></pre>
-  </div>
-  
-  <h3>Configuration Options</h3>
-  <ul>
-    <li><code>method</code>: The transceiver method (callback, event, api, return)</li>
-    <li><code>module</code>: The path to the transceiver module (for callback method)</li>
-    <li><code>config</code>: Additional configuration options for the transceiver</li>
-    <li><code>apiUrl</code>: The URL of the blockchain API to use</li>
-    <li><code>monitoringInterval</code>: The interval (in milliseconds) for polling the blockchain</li>
-    <li><code>autoMonitor</code>: Whether to automatically start monitoring the wallet address</li>
-  </ul>
-</div>
-
-<div class="content-section" id="examples">
-  <h2>Examples</h2>
-  <p>Here are some examples of custom transceivers for different blockchains:</p>
-  
-  <div class="example-tabs">
-    <div class="tab-headers">
-      <button class="tab-header active" data-tab="bitcoin">Bitcoin</button>
-      <button class="tab-header" data-tab="litecoin">Litecoin</button>
-      <button class="tab-header" data-tab="dogecoin">Dogecoin</button>
-    </div>
-    
-    <div class="tab-content active" id="bitcoin-tab">
-      <h3>Bitcoin Transceiver Example</h3>
-      <p>This example uses the Blockstream API to interact with the Bitcoin network.</p>
-      <div class="code-block">
-        <pre><code>const axios = require('axios');
-const { UTXOTransceiver } = require('fractaledger');
-
-class BitcoinTransceiver extends UTXOTransceiver {
-  constructor(config = {}) {
-    super(config);
-    
-    // Bitcoin-specific configuration
-    this.apiUrl = config.apiUrl || 'https://blockstream.info/api';
-    this.network = config.network || 'mainnet';
-    
-    // Use testnet API if network is testnet
-    if (this.network === 'testnet') {
-      this.apiUrl = 'https://blockstream.info/testnet/api';
-    }
-    
-    this.monitoringIntervals = {};
-    this.processedTransactions = new Set();
-    
-    this.logger.info(`Bitcoin Transceiver initialized with API URL: ${this.apiUrl}`);
-  }
-  
-  // Implementation of required methods...
-}
-
-module.exports = BitcoinTransceiver;</code></pre>
-      </div>
-    </div>
-    
-    <div class="tab-content" id="litecoin-tab">
-      <h3>Litecoin Transceiver Example</h3>
-      <p>This example uses the Bitaps API to interact with the Litecoin network.</p>
-      <div class="code-block">
-        <pre><code>const axios = require('axios');
-const { UTXOTransceiver } = require('fractaledger');
-
-class LitecoinTransceiver extends UTXOTransceiver {
-  constructor(config = {}) {
-    super(config);
-    
-    // Litecoin-specific configuration
-    this.apiUrl = config.apiUrl || 'https://ltc.bitaps.com/api/v1/blockchain';
-    this.network = config.network || 'mainnet';
-    
-    // Use testnet API if network is testnet
-    if (this.network === 'testnet') {
-      this.apiUrl = 'https://tltc.bitaps.com/api/v1/blockchain';
-    }
-    
-    this.monitoringIntervals = {};
-    this.processedTransactions = new Set();
-    
-    this.logger.info(`Litecoin Transceiver initialized with API URL: ${this.apiUrl}`);
-  }
-  
-  // Implementation of required methods...
-}
-
-module.exports = LitecoinTransceiver;</code></pre>
-      </div>
-    </div>
-
-	<div class="tab-content" id="dogecoin-tab">
-      <h3>Dogecoin Transceiver Example</h3>
-      <p>This example uses the Dogechain API to interact with the Dogecoin network.</p>
-      <div class="code-block">
-        <pre><code>const axios = require('axios');
-const { UTXOTransceiver } = require('fractaledger');
-
-class DogecoinTransceiver extends UTXOTransceiver {
-  constructor(config = {}) {
-    super(config);
-    
-    // Dogecoin-specific configuration
-    this.apiUrl = config.apiUrl || 'https://dogechain.info/api/v1';
-    this.network = config.network || 'mainnet';
-    
-    // Use testnet API if network is testnet
-    if (this.network === 'testnet') {
-      this.apiUrl = 'https://dogechain.info/api/v1/testnet';
-    }
-    
-    this.monitoringIntervals = {};
-    this.processedTransactions = new Set();
-    
-    this.logger.info(`Dogecoin Transceiver initialized with API URL: ${this.apiUrl}`);
-  }
-  
-  // Implementation of required methods...
-}
-
-module.exports = DogecoinTransceiver;</code></pre>
-      </div>
-    </div>
-  </div>
-</div>
+{% include transceivers/transceiver_tunnel.html %}
 
 <div class="next-steps">
   <h2>Next Steps</h2>
@@ -872,7 +96,8 @@ module.exports = DogecoinTransceiver;</code></pre>
     margin-bottom: 40px;
   }
   
-  .architecture-diagram {
+  .architecture-diagram,
+  .feature-diagram {
     margin: 20px 0;
     text-align: center;
   }
@@ -892,7 +117,8 @@ module.exports = DogecoinTransceiver;</code></pre>
     font-family: monospace;
   }
   
-  .method-card {
+  .method-card,
+  .component {
     background-color: white;
     border-radius: 5px;
     padding: 20px;
@@ -900,20 +126,28 @@ module.exports = DogecoinTransceiver;</code></pre>
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   }
   
-  .method-header {
+  .method-header,
+  .component {
     display: flex;
-    align-items: center;
-    margin-bottom: 15px;
+    align-items: flex-start;
   }
   
-  .method-icon {
+  .method-icon,
+  .component-icon {
     font-size: 2em;
     color: var(--primary-color);
     margin-right: 15px;
+    flex-shrink: 0;
   }
   
-  .method-content h4 {
-    margin-top: 20px;
+  .method-content,
+  .component-content {
+    flex-grow: 1;
+  }
+  
+  .method-content h4,
+  .component-content h4 {
+    margin-top: 0;
     margin-bottom: 10px;
   }
   
@@ -952,38 +186,84 @@ module.exports = DogecoinTransceiver;</code></pre>
     flex-grow: 1;
   }
   
-  .example-tabs {
-    margin-top: 20px;
+  .step-content h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
   }
   
-  .tab-headers {
-    display: flex;
-    border-bottom: 1px solid var(--border-color);
+  .endpoint-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
     margin-bottom: 20px;
   }
   
-  .tab-header {
-    padding: 10px 15px;
-    border: none;
-    background: none;
-    cursor: pointer;
+  .endpoint {
+    background-color: white;
+    border-radius: 5px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  .endpoint h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .method {
     font-weight: bold;
-    color: var(--text-light);
-    border-bottom: 2px solid transparent;
-    transition: all 0.3s ease;
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-right: 10px;
+    color: white;
+    font-size: 0.8em;
   }
   
-  .tab-header.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
+  .get {
+    background-color: #61affe;
   }
   
-  .tab-content {
-    display: none;
+  .post {
+    background-color: #49cc90;
   }
   
-  .tab-content.active {
-    display: block;
+  .put {
+    background-color: #fca130;
+  }
+  
+  .delete {
+    background-color: #f93e3e;
+  }
+  
+  .path {
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+  
+  .component-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .important-note {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 0 5px 5px 0;
+  }
+  
+  .important-note h3 {
+    margin-top: 0;
+    color: #856404;
   }
   
   .next-steps {
@@ -1046,6 +326,8 @@ module.exports = DogecoinTransceiver;</code></pre>
   
   /* Responsive Styles */
   @media (max-width: 768px) {
+    .endpoint-list,
+    .component-list,
     .next-steps-grid {
       grid-template-columns: 1fr;
     }
@@ -1058,43 +340,17 @@ module.exports = DogecoinTransceiver;</code></pre>
       margin-bottom: 10px;
     }
     
-    .tab-headers {
-      flex-wrap: wrap;
-    }
-    
-    .tab-header {
-      flex-grow: 1;
-      text-align: center;
-    }
-    
+    .method-header,
+    .component,
     .next-step-card {
       flex-direction: column;
     }
     
+    .method-icon,
+    .component-icon,
     .next-step-icon {
       margin-right: 0;
       margin-bottom: 10px;
     }
   }
 </style>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Tab functionality
-    const tabHeaders = document.querySelectorAll('.tab-header');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    tabHeaders.forEach(header => {
-      header.addEventListener('click', function() {
-        // Remove active class from all headers and contents
-        tabHeaders.forEach(h => h.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
-        
-        // Add active class to clicked header and corresponding content
-        header.classList.add('active');
-        const tabId = header.getAttribute('data-tab');
-        document.getElementById(`${tabId}-tab`).classList.add('active');
-      });
-    });
-  });
-</script>

@@ -1,0 +1,298 @@
+<div class="content-section" id="monitoring">
+  <h2>Wallet Monitoring</h2>
+  
+  <div class="important-note">
+    <h3>Important Note</h3>
+    <p>FractaLedger does not directly monitor the blockchain. Instead, it provides the infrastructure for your custom transceivers to handle blockchain monitoring. This design allows you to use your preferred blockchain interaction methods while maintaining a consistent interface within FractaLedger.</p>
+  </div>
+  
+  <p>Wallet monitoring is a critical feature that allows your application to stay synchronized with on-chain activity. The monitoring system in FractaLedger is designed to be flexible, allowing you to implement monitoring in a way that best suits your needs.</p>
+  
+  <h3>Monitoring Capabilities</h3>
+  <p>The monitoring system provides the following capabilities:</p>
+  <ul>
+    <li><strong>Transaction Detection</strong>: Detect incoming and outgoing transactions for monitored wallet addresses</li>
+    <li><strong>Balance Updates</strong>: Keep track of wallet balances based on blockchain activity</li>
+    <li><strong>Event Notifications</strong>: Receive notifications when transactions are detected</li>
+    <li><strong>Monitoring Management</strong>: Start and stop monitoring for specific wallet addresses</li>
+  </ul>
+  
+  <h3>Monitoring Methods</h3>
+  <p>FractaLedger supports several methods for monitoring wallet addresses:</p>
+  
+  <div class="method-card">
+    <div class="method-header">
+      <div class="method-icon">
+        <i class="fas fa-code"></i>
+      </div>
+      <h3>Custom Transceiver Monitoring</h3>
+    </div>
+    <div class="method-content">
+      <p>Implement the <code>monitorWalletAddress</code> and <code>stopMonitoringWalletAddress</code> methods in your custom transceiver to handle monitoring using your preferred approach.</p>
+      <h4>Implementation Options</h4>
+      <ul>
+        <li><strong>Websocket Connections</strong>: Establish persistent websocket connections to blockchain nodes or services</li>
+        <li><strong>Blockchain API Subscriptions</strong>: Use subscription-based APIs provided by blockchain services</li>
+        <li><strong>Custom Polling</strong>: Implement custom polling logic with optimized intervals</li>
+        <li><strong>Event-based Systems</strong>: Integrate with event-based blockchain monitoring systems</li>
+      </ul>
+      <h4>Example Implementation</h4>
+      <div class="code-block">
+        <pre><code>async monitorWalletAddress(address, callback) {
+  console.log(`Starting to monitor wallet address: ${address}`);
+  
+  try {
+    // Check if the address is already being monitored
+    if (this.monitoredAddresses.has(address)) {
+      return this.monitoredAddresses.get(address);
+    }
+    
+    // Example: Set up a websocket connection
+    const ws = new WebSocket(`wss://example.com/blockchain/address/${address}`);
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'transaction') {
+        // Call the callback with the transaction data
+        callback([data.transaction]);
+        
+        // Emit a transactions event
+        this.emit('transactions', {
+          address,
+          transactions: [data.transaction]
+        });
+      }
+    };
+    
+    // Store the websocket connection
+    this.monitoringConnections.set(address, ws);
+    
+    // Store the monitoring details
+    this.monitoredAddresses.set(address, {
+      address,
+      callback,
+      timestamp: Date.now(),
+      status: 'active',
+      method: 'websocket'
+    });
+    
+    return {
+      address,
+      status: 'active',
+      method: 'websocket'
+    };
+  } catch (error) {
+    console.error(`Failed to monitor address ${address}: ${error.message}`);
+    throw new Error(`Failed to monitor address ${address}: ${error.message}`);
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="method-card">
+    <div class="method-header">
+      <div class="method-icon">
+        <i class="fas fa-broadcast-tower"></i>
+      </div>
+      <h3>Event-based Monitoring</h3>
+    </div>
+    <div class="method-content">
+      <p>Use the event system to handle monitoring through external event listeners.</p>
+      <h4>Event Flow</h4>
+      <ol>
+        <li>FractaLedger emits a <code>monitor</code> event when a wallet address should be monitored</li>
+        <li>Your external system listens for these events and sets up monitoring</li>
+        <li>When transactions are detected, your system emits <code>transactions</code> events back to FractaLedger</li>
+      </ol>
+      <h4>Example Implementation</h4>
+      <div class="code-block">
+        <pre><code>const fractaledger = require('fractaledger');
+
+// Listen for monitoring requests
+fractaledger.events.on('monitor', (data) => {
+  const { address } = data;
+  console.log(`Setting up monitoring for address: ${address}`);
+  
+  // Set up your monitoring system (e.g., websocket, API subscription)
+  const monitor = setupMonitoring(address);
+  
+  // When transactions are detected, emit events back to FractaLedger
+  monitor.on('transaction', (transaction) => {
+    fractaledger.events.emit('transactions', {
+      address,
+      transactions: [transaction]
+    });
+  });
+});
+
+// Listen for stop monitoring requests
+fractaledger.events.on('stopMonitor', (data) => {
+  const { address } = data;
+  console.log(`Stopping monitoring for address: ${address}`);
+  
+  // Clean up your monitoring resources
+  cleanupMonitoring(address);
+});</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="method-card">
+    <div class="method-header">
+      <div class="method-icon">
+        <i class="fas fa-server"></i>
+      </div>
+      <h3>API-based Monitoring</h3>
+    </div>
+    <div class="method-content">
+      <p>Use API endpoints to manage monitoring and report transactions.</p>
+      <h4>API Endpoints</h4>
+      <ul>
+        <li><code>GET /api/wallets/monitoring</code> - Get a list of wallet addresses to monitor</li>
+        <li><code>POST /api/wallets/:id/transactions</code> - Submit detected transactions for a wallet</li>
+      </ul>
+      <h4>Example Implementation</h4>
+      <div class="code-block">
+        <pre><code>const axios = require('axios');
+
+// Function to get wallets to monitor
+async function getWalletsToMonitor() {
+  const response = await axios.get('http://localhost:3000/api/wallets/monitoring');
+  return response.data.wallets;
+}
+
+// Function to submit detected transactions
+async function submitTransactions(walletId, transactions) {
+  await axios.post(`http://localhost:3000/api/wallets/${walletId}/transactions`, {
+    transactions
+  });
+}
+
+// Example monitoring loop
+async function monitoringLoop() {
+  try {
+    // Get wallets to monitor
+    const wallets = await getWalletsToMonitor();
+    
+    // Set up monitoring for each wallet
+    for (const wallet of wallets) {
+      if (!monitoredWallets.has(wallet.id)) {
+        console.log(`Setting up monitoring for wallet: ${wallet.id}`);
+        
+        // Set up your monitoring system
+        const monitor = setupMonitoring(wallet.address);
+        
+        // When transactions are detected, submit them to FractaLedger
+        monitor.on('transaction', async (transaction) => {
+          await submitTransactions(wallet.id, [transaction]);
+        });
+        
+        monitoredWallets.set(wallet.id, {
+          wallet,
+          monitor
+        });
+      }
+    }
+    
+    // Clean up monitoring for wallets that are no longer in the list
+    for (const [walletId, { monitor }] of monitoredWallets.entries()) {
+      if (!wallets.some(w => w.id === walletId)) {
+        console.log(`Stopping monitoring for wallet: ${walletId}`);
+        
+        // Clean up your monitoring resources
+        cleanupMonitoring(monitor);
+        
+        monitoredWallets.delete(walletId);
+      }
+    }
+  } catch (error) {
+    console.error(`Monitoring loop error: ${error.message}`);
+  }
+  
+  // Schedule the next iteration
+  setTimeout(monitoringLoop, 60000);
+}
+
+// Start the monitoring loop
+monitoringLoop();</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="method-card">
+    <div class="method-header">
+      <div class="method-icon">
+        <i class="fas fa-clock"></i>
+      </div>
+      <h3>Polling-based Monitoring (Fallback)</h3>
+    </div>
+    <div class="method-content">
+      <p>FractaLedger includes a fallback polling-based monitoring system that periodically checks for new transactions. This is used when no other monitoring method is specified.</p>
+      <h4>How It Works</h4>
+      <ol>
+        <li>FractaLedger sets up a polling interval for each monitored wallet address</li>
+        <li>At each interval, it calls the <code>getTransactionHistory</code> method of your transceiver</li>
+        <li>It compares the results with previously seen transactions to detect new ones</li>
+        <li>When new transactions are detected, it calls the provided callback function</li>
+      </ol>
+      <h4>Configuration</h4>
+      <div class="code-block">
+        <pre><code>{
+  "name": "btc_wallet_1",
+  "network": "mainnet",
+  "walletAddress": "bc1q...",
+  "secretEnvVar": "BTC_WALLET_1_SECRET",
+  "transceiver": {
+    "method": "callback",
+    "module": "./transceivers/utxo-transceiver.js",
+    "config": {
+      "monitoringInterval": 60000 // Polling interval in milliseconds
+    }
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <h3>Monitoring API Endpoints</h3>
+  <p>FractaLedger provides API endpoints for managing wallet monitoring:</p>
+  
+  <div class="endpoint-list">
+    <div class="endpoint">
+      <h4>Start Monitoring a Wallet</h4>
+      <div class="endpoint-header">
+        <span class="method post">POST</span>
+        <span class="path">/api/wallets/:blockchain/:name/monitor</span>
+      </div>
+      <p>Registers a wallet for monitoring. The actual monitoring implementation depends on the transceiver method configured for the wallet.</p>
+    </div>
+    
+    <div class="endpoint">
+      <h4>Stop Monitoring a Wallet</h4>
+      <div class="endpoint-header">
+        <span class="method delete">DELETE</span>
+        <span class="path">/api/wallets/:blockchain/:name/monitor</span>
+      </div>
+      <p>Stops monitoring a wallet address.</p>
+    </div>
+    
+    <div class="endpoint">
+      <h4>Get Monitored Wallets</h4>
+      <div class="endpoint-header">
+        <span class="method get">GET</span>
+        <span class="path">/api/wallets/monitoring</span>
+      </div>
+      <p>Returns a list of wallets that are currently being monitored.</p>
+    </div>
+    
+    <div class="endpoint">
+      <h4>Submit Wallet Transactions</h4>
+      <div class="endpoint-header">
+        <span class="method post">POST</span>
+        <span class="path">/api/wallets/:id/transactions</span>
+      </div>
+      <p>Submits detected transactions for a wallet. This endpoint is used by external monitoring systems to report transactions to FractaLedger.</p>
+    </div>
+  </div>
+</div>

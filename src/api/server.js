@@ -448,6 +448,136 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
       }
     });
     
+    // Transaction Broadcasting Flow
+    
+    /**
+     * Get pending transactions that need to be broadcast
+     * GET /api/transactions/pending
+     */
+    app.get('/api/transactions/pending', authenticateJWT, async (req, res) => {
+      try {
+        const pendingTransactions = [];
+        
+        // Get pending transactions from all blockchain connectors
+        for (const blockchain of Object.keys(blockchainConnectors)) {
+          for (const walletName of Object.keys(blockchainConnectors[blockchain])) {
+            const connector = blockchainConnectors[blockchain][walletName];
+            
+            if (connector.transceiverManager) {
+              const walletPendingTxs = connector.transceiverManager.getAllPendingTransactions()
+                .filter(tx => tx.status === 'ready')
+                .map(tx => ({
+                  ...tx,
+                  blockchain,
+                  primaryWalletName: walletName
+                }));
+              
+              pendingTransactions.push(...walletPendingTxs);
+            }
+          }
+        }
+        
+        res.json({ pendingTransactions });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    /**
+     * Submit transaction broadcast results
+     * POST /api/transactions/results
+     */
+    app.post('/api/transactions/results', authenticateJWT, async (req, res) => {
+      try {
+        const messageManager = createMessageManager();
+        const { txid, success, blockHeight, confirmations, error } = req.body;
+        
+        if (!txid) {
+          messageManager.addError(
+            MessageCode.ERROR_INVALID_PARAMETERS,
+            'Missing required parameters'
+          );
+          return res.status(400).json(messageManager.createResponse({ success: false }));
+        }
+        
+        // Find the transaction in the pending transactions
+        let transaction = null;
+        let connector = null;
+        
+        // Search for the transaction in all blockchain connectors
+        for (const blockchain of Object.keys(blockchainConnectors)) {
+          for (const walletName of Object.keys(blockchainConnectors[blockchain])) {
+            const conn = blockchainConnectors[blockchain][walletName];
+            
+            if (conn.transceiverManager) {
+              const tx = conn.transceiverManager.getPendingTransaction(txid);
+              
+              if (tx) {
+                transaction = tx;
+                connector = conn;
+                break;
+              }
+            }
+          }
+          
+          if (transaction) break;
+        }
+        
+        if (!transaction) {
+          messageManager.addError(
+            MessageCode.ERROR_TRANSACTION_NOT_FOUND,
+            'Transaction not found',
+            { txid }
+          );
+          return res.status(404).json(messageManager.createResponse({ success: false }));
+        }
+        
+        // Update the transaction status
+        if (success) {
+          transaction.status = 'confirmed';
+          transaction.blockHeight = blockHeight;
+          transaction.confirmations = confirmations;
+          
+          messageManager.addInfo(
+            MessageCode.INFO_TRANSACTION_PROCESSED,
+            'Transaction results recorded successfully',
+            {
+              txid,
+              status: 'confirmed'
+            }
+          );
+        } else {
+          transaction.status = 'failed';
+          transaction.error = error;
+          
+          messageManager.addWarning(
+            MessageCode.WARN_TRANSACTION_FAILED,
+            'Transaction failed to broadcast',
+            {
+              txid,
+              error
+            }
+          );
+        }
+        
+        // Update the transaction in the transceiver manager
+        connector.transceiverManager.pendingTransactions.set(txid, transaction);
+        
+        res.json(messageManager.createResponse({
+          success: true,
+          transaction: {
+            txid,
+            status: transaction.status,
+            blockHeight: transaction.blockHeight,
+            confirmations: transaction.confirmations,
+            timestamp: transaction.timestamp
+          }
+        }));
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
     app.get('/api/transactions', authenticateJWT, async (req, res) => {
       try {
         const { internalWalletId, limit } = req.query;

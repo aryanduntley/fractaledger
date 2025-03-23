@@ -1,0 +1,67 @@
+<div class="content-section" id="overview">
+  <h2>Overview</h2>
+  <p>FractaLedger uses a flexible transceiver architecture that handles both transaction broadcasting and wallet address monitoring. This approach completely separates transaction creation/signing from the broadcasting and monitoring mechanisms, allowing you to use your existing infrastructure for blockchain interactions.</p>
+  
+  <div class="architecture-diagram">
+    <img src="{{ '/assets/images/transceiver-architecture.png' | relative_url }}" alt="Transceiver Architecture Diagram" onerror="this.style.display='none'">
+    <div class="diagram-fallback">
+      <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      FractaLedger Core                       │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Transaction   │    │ Blockchain    │    │ Wallet       │ │
+│  │ Builder       │───▶│ Connector     │───▶│ Manager      │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                              │                              │
+└──────────────────────────────┼──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Transceiver Manager                       │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Callback      │    │ Event         │    │ API          │ │
+│  │ Method        │    │ Method        │    │ Method       │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Custom Transceivers                       │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Bitcoin       │    │ Litecoin      │    │ Dogecoin     │ │
+│  │ Transceiver   │    │ Transceiver   │    │ Transceiver  │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Blockchain Networks                       │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Bitcoin       │    │ Litecoin      │    │ Dogecoin     │ │
+│  │ Network       │    │ Network       │    │ Network      │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+  </div>
+  
+  <p>The transceiver architecture provides several benefits:</p>
+  <ul>
+    <li><strong>Flexibility</strong>: You can choose how to broadcast transactions and monitor wallet addresses based on your specific needs.</li>
+    <li><strong>Extensibility</strong>: You can easily add support for new blockchains by implementing new transceivers.</li>
+    <li><strong>Separation of Concerns</strong>: Transaction creation/signing is separated from broadcasting and monitoring, allowing for better modularity.</li>
+    <li><strong>Integration</strong>: You can integrate with your existing blockchain infrastructure or third-party services.</li>
+  </ul>
+  
+  <div class="important-note">
+    <h3>Important Note</h3>
+    <p>FractaLedger itself does not directly monitor the blockchain. Instead, it provides the infrastructure for your custom transceivers to handle blockchain monitoring. This design allows you to use your preferred blockchain interaction methods while maintaining a consistent interface within FractaLedger.</p>
+  </div>
+</div>

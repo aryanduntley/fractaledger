@@ -1,0 +1,386 @@
+<div class="content-section" id="automatic-tunnel">
+  <h2>Setting Up an Automatic Tunnel</h2>
+  
+  <p>An automatic tunnel or watch system between FractaLedger and your blockchain implementation allows for dynamic on-chain interactions without manual intervention. This section explains how to set up such a system.</p>
+  
+  <div class="feature-diagram">
+    <img src="{{ '/assets/images/automatic-tunnel.png' | relative_url }}" alt="Automatic Tunnel Diagram" onerror="this.style.display='none'">
+    <div class="diagram-fallback">
+      <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      FractaLedger                           │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Transaction   │    │ Transceiver   │    │ Event        │ │
+│  │ Creation      │───▶│ Manager       │◀───│ Handlers     │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                              │                              │
+└──────────────────────────────┼──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Automatic Tunnel                          │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Persistent    │    │ Real-time     │    │ Transaction  │ │
+│  │ Connection    │◀──▶│ Monitoring    │───▶│ Broadcasting │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Blockchain Network                        │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Transactions  │    │ Blocks        │    │ Mempool      │ │
+│  │               │    │               │    │              │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+  </div>
+  
+  <h3>Components of an Automatic Tunnel</h3>
+  <p>An effective automatic tunnel consists of the following components:</p>
+  
+  <div class="component-list">
+    <div class="component">
+      <div class="component-icon">
+        <i class="fas fa-plug"></i>
+      </div>
+      <div class="component-content">
+        <h4>Persistent Connection</h4>
+        <p>A long-lived connection to your blockchain node or service that stays open to receive real-time updates.</p>
+      </div>
+    </div>
+    
+    <div class="component">
+      <div class="component-icon">
+        <i class="fas fa-eye"></i>
+      </div>
+      <div class="component-content">
+        <h4>Real-time Monitoring</h4>
+        <p>A mechanism to detect blockchain events (new transactions, blocks) as they happen, rather than polling at intervals.</p>
+      </div>
+    </div>
+    
+    <div class="component">
+      <div class="component-icon">
+        <i class="fas fa-broadcast-tower"></i>
+      </div>
+      <div class="component-content">
+        <h4>Transaction Broadcasting</h4>
+        <p>A reliable method to broadcast transactions to the blockchain network when needed.</p>
+      </div>
+    </div>
+    
+    <div class="component">
+      <div class="component-icon">
+        <i class="fas fa-sync-alt"></i>
+      </div>
+      <div class="component-content">
+        <h4>Automatic Initialization</h4>
+        <p>Logic to automatically set up monitoring when wallets are created or the system starts.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h3>Implementation Steps</h3>
+  <p>Follow these steps to implement an automatic tunnel:</p>
+  
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h4>Create a Custom Transceiver</h4>
+      <p>Implement a custom transceiver that establishes persistent connections to your blockchain infrastructure.</p>
+      <div class="code-block">
+        <pre><code>// Example: Custom Bitcoin Transceiver with WebSocket connection
+const { UTXOTransceiver } = require('fractaledger');
+const WebSocket = require('ws');
+
+class BitcoinWebSocketTransceiver extends UTXOTransceiver {
+  constructor(config = {}) {
+    super(config);
+    
+    this.apiUrl = config.apiUrl || 'https://blockstream.info/api';
+    this.wsUrl = config.wsUrl || 'wss://blockstream.info/api/ws';
+    this.connections = new Map();
+    
+    // Initialize any other required properties
+    this.monitoredAddresses = new Map();
+    this.monitoringConnections = new Map();
+    
+    console.log('Bitcoin WebSocket Transceiver initialized');
+  }
+  
+  // Implement required methods...
+}
+
+module.exports = BitcoinWebSocketTransceiver;</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h4>Implement Real-time Monitoring</h4>
+      <p>Implement the <code>monitorWalletAddress</code> method to establish a real-time connection for monitoring.</p>
+      <div class="code-block">
+        <pre><code>async monitorWalletAddress(address, callback) {
+  console.log(`Starting to monitor wallet address: ${address}`);
+  
+  try {
+    // Check if the address is already being monitored
+    if (this.monitoredAddresses.has(address)) {
+      return this.monitoredAddresses.get(address);
+    }
+    
+    // Create a WebSocket connection for this address
+    const ws = new WebSocket(`${this.wsUrl}/address/${address}`);
+    
+    ws.onopen = () => {
+      console.log(`WebSocket connection established for ${address}`);
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Process the transaction data
+        const transaction = {
+          txid: data.txid,
+          amount: this.calculateAmount(data, address),
+          timestamp: Date.now(),
+          confirmations: data.status.confirmed ? 1 : 0
+        };
+        
+        // Call the callback with the transaction data
+        callback([transaction]);
+        
+        // Emit a transactions event
+        this.emit('transactions', {
+          address,
+          transactions: [transaction]
+        });
+      } catch (error) {
+        console.error(`Error processing WebSocket message: ${error.message}`);
+      }
+    };
+    
+    ws.onerror = (error) => {
+      console.error(`WebSocket error for ${address}: ${error.message}`);
+    };
+    
+    ws.onclose = () => {
+      console.log(`WebSocket connection closed for ${address}`);
+      
+      // Attempt to reconnect after a delay
+      setTimeout(() => {
+        if (this.monitoredAddresses.has(address)) {
+          console.log(`Attempting to reconnect WebSocket for ${address}`);
+          this.monitorWalletAddress(address, callback);
+        }
+      }, 5000);
+    };
+    
+    // Store the WebSocket connection
+    this.monitoringConnections.set(address, ws);
+    
+    // Store the monitoring details
+    this.monitoredAddresses.set(address, {
+      address,
+      callback,
+      timestamp: Date.now(),
+      status: 'active',
+      method: 'websocket'
+    });
+    
+    return {
+      address,
+      status: 'active',
+      method: 'websocket'
+    };
+  } catch (error) {
+    console.error(`Failed to monitor address ${address}: ${error.message}`);
+    throw new Error(`Failed to monitor address ${address}: ${error.message}`);
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h4>Implement Transaction Broadcasting</h4>
+      <p>Implement the <code>broadcastTransaction</code> method to send transactions to the blockchain network.</p>
+      <div class="code-block">
+        <pre><code>async broadcastTransaction(txHex, metadata = {}) {
+  console.log(`Broadcasting transaction: ${metadata.txid || 'unknown'}`);
+  
+  try {
+    // Use the REST API to broadcast the transaction
+    const response = await fetch(`${this.apiUrl}/tx`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ txHex })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`API error: ${errorData.message || response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    // Emit a transaction event
+    this.emit('transaction', {
+      txid: result.txid,
+      txHex,
+      metadata,
+      timestamp: Date.now()
+    });
+    
+    return result.txid;
+  } catch (error) {
+    console.error(`Failed to broadcast transaction: ${error.message}`);
+    throw new Error(`Failed to broadcast transaction: ${error.message}`);
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <h4>Implement Automatic Initialization</h4>
+      <p>Configure your transceiver to automatically start monitoring when wallets are created or the system starts.</p>
+      <div class="code-block">
+        <pre><code>// In your transceiver configuration
+{
+  "name": "btc_wallet_1",
+  "network": "mainnet",
+  "walletAddress": "bc1q...",
+  "secretEnvVar": "BTC_WALLET_1_SECRET",
+  "transceiver": {
+    "method": "callback",
+    "module": "./transceivers/bitcoin-websocket-transceiver.js",
+    "config": {
+      "apiUrl": "https://blockstream.info/api",
+      "wsUrl": "wss://blockstream.info/api/ws",
+      "autoMonitor": true
+    }
+  }
+}
+
+// In your transceiver's initialize method
+async initialize() {
+  console.log('Initializing Bitcoin WebSocket Transceiver');
+  
+  try {
+    // If autoMonitor is enabled, start monitoring the wallet address
+    if (this.config.autoMonitor && this.config.walletAddress) {
+      await this.monitorWalletAddress(this.config.walletAddress, (transactions) => {
+        console.log(`Detected ${transactions.length} transactions for ${this.config.walletAddress}`);
+        // Process the transactions
+      });
+    }
+    
+    console.log('Bitcoin WebSocket Transceiver initialized successfully');
+  } catch (error) {
+    console.error(`Failed to initialize Bitcoin WebSocket Transceiver: ${error.message}`);
+    throw new Error(`Failed to initialize Bitcoin WebSocket Transceiver: ${error.message}`);
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">5</div>
+    <div class="step-content">
+      <h4>Handle Connection Management</h4>
+      <p>Implement robust connection management to handle disconnections, reconnections, and cleanup.</p>
+      <div class="code-block">
+        <pre><code>async stopMonitoringWalletAddress(address) {
+  console.log(`Stopping monitoring for wallet address: ${address}`);
+  
+  try {
+    // Check if the address is being monitored
+    if (!this.monitoredAddresses.has(address)) {
+      console.log(`Address ${address} is not being monitored`);
+      return false;
+    }
+    
+    // Get the WebSocket connection
+    const ws = this.monitoringConnections.get(address);
+    
+    // Close the WebSocket connection
+    if (ws && ws.readyState !== WebSocket.CLOSED) {
+      ws.close();
+    }
+    
+    // Remove the connection from the maps
+    this.monitoringConnections.delete(address);
+    this.monitoredAddresses.delete(address);
+    
+    console.log(`Stopped monitoring address ${address}`);
+    
+    return true;
+  } catch (error) {
+    console.error(`Failed to stop monitoring address ${address}: ${error.message}`);
+    throw new Error(`Failed to stop monitoring address ${address}: ${error.message}`);
+  }
+}
+
+async cleanup() {
+  console.log('Cleaning up Bitcoin WebSocket Transceiver resources');
+  
+  try {
+    // Close all WebSocket connections
+    for (const [address, ws] of this.monitoringConnections.entries()) {
+      if (ws && ws.readyState !== WebSocket.CLOSED) {
+        ws.close();
+      }
+    }
+    
+    // Clear all maps
+    this.monitoringConnections.clear();
+    this.monitoredAddresses.clear();
+    
+    console.log('Bitcoin WebSocket Transceiver resources cleaned up successfully');
+  } catch (error) {
+    console.error(`Failed to clean up Bitcoin WebSocket Transceiver resources: ${error.message}`);
+    throw new Error(`Failed to clean up Bitcoin WebSocket Transceiver resources: ${error.message}`);
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <h3>Benefits of an Automatic Tunnel</h3>
+  <p>Implementing an automatic tunnel provides several benefits:</p>
+  <ul>
+    <li><strong>Real-time Updates</strong>: Get immediate notifications of blockchain activity</li>
+    <li><strong>Reduced Latency</strong>: Minimize the delay between on-chain events and system updates</li>
+    <li><strong>Lower Resource Usage</strong>: Avoid the overhead of frequent polling</li>
+    <li><strong>Better User Experience</strong>: Provide users with up-to-date information without manual refreshes</li>
+    <li><strong>Simplified Integration</strong>: Automate the connection between FractaLedger and your blockchain infrastructure</li>
+  </ul>
+  
+  <h3>Considerations</h3>
+  <p>When implementing an automatic tunnel, consider the following:</p>
+  <ul>
+    <li><strong>Connection Stability</strong>: Implement robust error handling and reconnection logic</li>
+    <li><strong>Resource Management</strong>: Ensure proper cleanup of resources when connections are no longer needed</li>
+    <li><strong>Scalability</strong>: Consider how your solution will scale with an increasing number of monitored wallets</li>
+    <li><strong>Security</strong>: Ensure secure communication between your application and blockchain nodes</li>
+    <li><strong>Fallback Mechanisms</strong>: Implement fallback mechanisms (like polling) for when real-time connections fail</li>
+  </ul>
+</div>

@@ -1,0 +1,189 @@
+<div class="content-section" id="transceiver-methods">
+  <h2>Transceiver Methods</h2>
+  <p>FractaLedger supports four transceiver methods, each with its own advantages and use cases:</p>
+  
+  <div class="method-card">
+    <div class="method-header">
+      <div class="method-icon">
+        <i class="fas fa-code"></i>
+      </div>
+      <h3>Callback Method</h3>
+    </div>
+    <div class="method-content">
+      <p>Uses a custom transceiver module to broadcast transactions and monitor wallet addresses. This method provides maximum flexibility and control.</p>
+      <h4>When to Use</h4>
+      <ul>
+        <li>You need complete control over how transactions are broadcasted</li>
+        <li>You want to implement custom monitoring logic</li>
+        <li>You need to integrate with specific blockchain APIs or services</li>
+      </ul>
+      <h4>Configuration Example</h4>
+      <div class="code-block">
+        <pre><code>{
+  "name": "btc_wallet_1",
+  "network": "mainnet",
+  "walletAddress": "bc1q...",
+  "secretEnvVar": "BTC_WALLET_1_SECRET",
+  "transceiver": {
+    "method": "callback",
+    "module": "./transceivers/utxo-transceiver.js",
+    "config": {
+      "apiUrl": "https://blockstream.info/api",
+      "monitoringInterval": 60000,
+      "autoMonitor": true
+    }
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="method-card">
+    <div class="method-header">
+      <div class="method-icon">
+        <i class="fas fa-broadcast-tower"></i>
+      </div>
+      <h3>Event Method</h3>
+    </div>
+    <div class="method-content">
+      <p>Emits events with transaction data and wallet address updates for external listeners. This method is useful for integrating with event-driven architectures.</p>
+      <h4>When to Use</h4>
+      <ul>
+        <li>You have an existing event-driven system</li>
+        <li>You want to handle transaction broadcasting and monitoring in a separate process</li>
+        <li>You need to notify multiple systems about transactions and wallet updates</li>
+      </ul>
+      <h4>Configuration Example</h4>
+      <div class="code-block">
+        <pre><code>{
+  "name": "btc_wallet_2",
+  "network": "mainnet",
+  "walletAddress": "bc1q...",
+  "secretEnvVar": "BTC_WALLET_2_SECRET",
+  "transceiver": {
+    "method": "event",
+    "eventNamespace": "transactions"
+  }
+}</code></pre>
+      </div>
+      <h4>Event Handling Example</h4>
+      <div class="code-block">
+        <pre><code>const fractaledger = require('fractaledger');
+
+// Listen for transaction broadcast events
+fractaledger.events.on('transactions:broadcast', (txData) => {
+  console.log('Transaction to broadcast:', txData);
+  // Broadcast the transaction using your preferred method
+  // ...
+  
+  // Notify FractaLedger about the broadcast result
+  fractaledger.events.emit('transactions:broadcast:result', {
+    txid: 'abcdef1234567890...',
+    success: true,
+    data: txData
+  });
+});
+
+// Listen for wallet monitoring events
+fractaledger.events.on('transactions:monitor', (walletData) => {
+  console.log('Wallet to monitor:', walletData);
+  // Set up monitoring for the wallet using your preferred method
+  // ...
+});</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="method-card">
+    <div class="method-header">
+      <div class="method-icon">
+        <i class="fas fa-server"></i>
+      </div>
+      <h3>API Method</h3>
+    </div>
+    <div class="method-content">
+      <p>Makes transactions and wallet address updates available through API endpoints. This method is useful for web applications and services.</p>
+      <h4>When to Use</h4>
+      <ul>
+        <li>You want to handle transaction broadcasting through HTTP requests</li>
+        <li>You have a separate service that will poll for transactions to broadcast</li>
+        <li>You want to integrate with a web application</li>
+      </ul>
+      <h4>Configuration Example</h4>
+      <div class="code-block">
+        <pre><code>{
+  "name": "btc_wallet_3",
+  "network": "mainnet",
+  "walletAddress": "bc1q...",
+  "secretEnvVar": "BTC_WALLET_3_SECRET",
+  "transceiver": {
+    "method": "api",
+    "apiEndpoint": "/api/transactions"
+  }
+}</code></pre>
+      </div>
+      <h4>API Endpoints</h4>
+      <ul>
+        <li><code>GET /api/transactions/pending</code> - Get pending transactions to broadcast</li>
+        <li><code>POST /api/transactions/results</code> - Submit broadcast results</li>
+        <li><code>GET /api/wallets/monitoring</code> - Get wallets to monitor</li>
+        <li><code>POST /api/wallets/:id/transactions</code> - Submit wallet transactions</li>
+      </ul>
+      
+      <h4>Transaction Flow</h4>
+      <p>When using the API method, the transaction flow is as follows:</p>
+      <ol>
+        <li><strong>Transaction Creation</strong>: When you use endpoints like <code>/api/transactions/withdraw</code>, the system creates a transaction with the specified parameters, signs it with the wallet's private key, generates the raw transaction hex, assigns a transaction ID, and stores this information in the pending transactions map.</li>
+        <li><strong>Transaction Retrieval</strong>: Your application retrieves pending transactions via <code>GET /api/transactions/pending</code>.</li>
+        <li><strong>External Broadcasting</strong>: Your application is responsible for broadcasting these transactions to the blockchain network using your own infrastructure or third-party services.</li>
+        <li><strong>Result Submission</strong>: After broadcasting, your application reports the results back to FractaLedger via <code>POST /api/transactions/results</code>.</li>
+      </ol>
+    </div>
+  </div>
+  
+  <div class="method-card">
+    <div class="method-header">
+      <div class="method-icon">
+        <i class="fas fa-undo"></i>
+      </div>
+      <h3>Return Method</h3>
+    </div>
+    <div class="method-content">
+      <p>Simply returns transaction data and wallet address updates without broadcasting or monitoring. This method is useful for manual broadcasting or testing.</p>
+      <h4>When to Use</h4>
+      <ul>
+        <li>You want to manually broadcast transactions</li>
+        <li>You're testing the system without actually interacting with blockchains</li>
+        <li>You want to inspect transaction data before broadcasting</li>
+      </ul>
+      <h4>Configuration Example</h4>
+      <div class="code-block">
+        <pre><code>{
+  "name": "btc_wallet_4",
+  "network": "mainnet",
+  "walletAddress": "bc1q...",
+  "secretEnvVar": "BTC_WALLET_4_SECRET",
+  "transceiver": {
+    "method": "return"
+  }
+}</code></pre>
+      </div>
+      <h4>Usage Example</h4>
+      <div class="code-block">
+        <pre><code>const fractaledger = require('fractaledger');
+
+// Create a transaction
+const txData = await fractaledger.createTransaction({
+  fromWalletId: 'btc_wallet_4',
+  toAddress: 'bc1q...',
+  amount: 0.1,
+  fee: 0.0001
+});
+
+console.log('Transaction data:', txData);
+// Manually broadcast the transaction using your preferred method
+// ...</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
