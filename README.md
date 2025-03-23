@@ -620,13 +620,13 @@ FractaLedger provides comprehensive documentation across various files. Here's a
 
 ### Component Documentation
 - [docs/BaseInternalWallet.md](docs/BaseInternalWallet.md) - Base internal wallet documentation
-- [docs/InternalWalletFunding.md]
-- [docs/InternalWalletFundingAndPrimaryWallet.md]
-- [docs/InternalWalletFundingSufficientFundsCheck.md]
-- [docs/InternalWalletFundingSummary.md]
-- [docs/InternalWalletFundingEndpointExplanation.md]
-- [docs/TransceiverSystemDocumentation.md]
-- [docs/TransceiverEndpointsGuide.md]
+- [docs/InternalWalletFunding.md](docs/InternalWalletFunding.md) - Internal wallet funding documentation
+- [docs/InternalWalletFundingAndPrimaryWallet.md](docs/InternalWalletFundingAndPrimaryWallet.md) - Internal wallet primary wallet check documentation
+- [docs/InternalWalletFundingSufficientFundsCheck.md](docs/InternalWalletFundingSufficientFundsCheck.md) - Internal Wallet funds check documentation
+- [docs/InternalWalletFundingSummary.md](docs/InternalWalletFundingSummary.md) - Internal wallet funds summary documentation
+- [docs/InternalWalletFundingEndpointExplanation.md](docs/InternalWalletFundingEndpointExplanation.md) - Internal wallet API documentation
+- [docs/TransceiverSystemDocumentation.md](docs/TransceiverSystemDocumentation.md) - Transceiver System documentation
+- [docs/TransceiverEndpointsGuide.md](docs/TransceiverEndpointsGuide.md) - Transceiver enpoints documentation
 - [api-extensions/README.md](api-extensions/README.md) - API extensions documentation
 - [transceivers/README.md](transceivers/README.md) - Transceivers documentation
 - [logs/README.md](logs/README.md) - Logs directory documentation
