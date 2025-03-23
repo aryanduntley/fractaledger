@@ -2,28 +2,6 @@
   "name": "fractaledger",
   "version": "1.0.0",
   "description": "A configurable off-chain UTXO management system that enables fractional ownership, secure fund distribution, and seamless on-chain interactions across multiple blockchains.",
-  "main": "dist/src/index.js",
-  "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "jest",
-    "lint": "eslint src/**/*.js",
-    "format": "prettier --write \"src/**/*.js\"",
-    "clean": "rm -rf dist",
-    "prebuild": "npm run clean",
-    "build": "mkdir -p dist && cp -r src transceivers fractaledger-template.json README.md LICENSE dist/ && mkdir -p dist/bin && cp -r bin/* dist/bin/ && chmod +x dist/bin/*.js",
-    "prepublishOnly": "npm run build"
-  },
-  "bin": {
-    "fractaledger-init": "./dist/bin/init.js",
-    "fractaledger-generate-transceiver": "./dist/bin/generate-transceiver.js",
-    "fractaledger-generate-config": "./dist/bin/generate-config.js"
-  },
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md"
-  ],
   "keywords": [
     "blockchain",
     "utxo",
@@ -35,8 +13,43 @@
     "fractional",
     "ownership"
   ],
-  "author": "Aryan Duntley",
+  "homepage": "https://github.com/aryanduntley/fractaledger#readme",
+  "bugs": {
+    "url": "https://github.com/aryanduntley/fractaledger/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aryanduntley/fractaledger.git"
+  },
   "license": "MIT",
+  "author": "Aryan Duntley",
+  "type": "commonjs",
+  "main": "dist/src/index.js",
+  "bin": {
+    "fractaledger-init": "dist/bin/init.js",
+    "fractaledger-generate-transceiver": "dist/bin/generate-transceiver.js",
+    "fractaledger-generate-config": "dist/bin/generate-config.js"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "lint": "eslint src/**/*.js",
+    "format": "prettier --write \"src/**/*.js\"",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "build": "mkdir -p dist && cp -r src transceivers fractaledger-template.json README.md LICENSE dist/ && mkdir -p dist/bin && cp -r bin/* dist/bin/ && chmod +x dist/bin/*.js",
+    "prepublishOnly": "npm run build"
+  },
   "dependencies": {
     "bitcoinjs-lib": "^6.1.0",
     "cors": "^2.8.5",
