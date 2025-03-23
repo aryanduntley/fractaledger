@@ -212,9 +212,26 @@ fractaledger.events.on('transactions:monitor', (walletData) => {
       <h4>API Endpoints</h4>
       <ul>
         <li><code>GET /api/transactions/pending</code> - Get pending transactions to broadcast</li>
-        <li><code>POST /api/transactions/broadcast</code> - Submit broadcast results</li>
+        <li><code>POST /api/transactions/results</code> - Submit broadcast results</li>
         <li><code>GET /api/wallets/monitoring</code> - Get wallets to monitor</li>
         <li><code>POST /api/wallets/:id/transactions</code> - Submit wallet transactions</li>
+      </ul>
+      
+      <h4>Transaction Flow</h4>
+      <p>When using the API method, the transaction flow is as follows:</p>
+      <ol>
+        <li><strong>Transaction Creation</strong>: When you use endpoints like <code>/api/transactions/withdraw</code>, the system creates a transaction with the specified parameters, signs it with the wallet's private key, generates the raw transaction hex, assigns a transaction ID, and stores this information in the pending transactions map.</li>
+        <li><strong>Transaction Retrieval</strong>: Your application retrieves pending transactions via <code>GET /api/transactions/pending</code>.</li>
+        <li><strong>External Broadcasting</strong>: Your application is responsible for broadcasting these transactions to the blockchain network using your own infrastructure or third-party services.</li>
+        <li><strong>Result Submission</strong>: After broadcasting, your application reports the results back to FractaLedger via <code>POST /api/transactions/results</code>.</li>
+      </ol>
+      
+      <p>This architecture provides several benefits:</p>
+      <ul>
+        <li><strong>Flexibility</strong>: You can implement your own broadcasting logic.</li>
+        <li><strong>Security</strong>: Sensitive operations like broadcasting can be handled in a controlled environment.</li>
+        <li><strong>Customization</strong>: Different broadcasting methods can be used for different scenarios.</li>
+        <li><strong>Separation of Concerns</strong>: Transaction creation is separate from blockchain interaction.</li>
       </ul>
     </div>
   </div>
@@ -1081,4 +1098,3 @@ module.exports = DogecoinTransceiver;</code></pre>
     });
   });
 </script>
-

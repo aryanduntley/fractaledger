@@ -479,6 +479,24 @@ async function transferFunds() {
 }</code></pre>
   </div>
   
+  <h3>Transaction Broadcasting Flow</h3>
+  <p>FractaLedger uses a transceiver architecture that separates transaction creation/signing from the actual blockchain interaction. This allows you to handle blockchain operations through your preferred method. The complete transaction flow is as follows:</p>
+  
+  <ol>
+    <li><strong>Transaction Creation</strong>: When you use endpoints like <code>/api/transactions/withdraw</code>, the system creates a transaction with the specified parameters, signs it with the wallet's private key, generates the raw transaction hex, assigns a transaction ID, and stores this information in the pending transactions map.</li>
+    <li><strong>Transaction Retrieval</strong>: Your application retrieves pending transactions via <code>GET /api/transactions/pending</code>.</li>
+    <li><strong>External Broadcasting</strong>: Your application is responsible for broadcasting these transactions to the blockchain network using your own infrastructure or third-party services.</li>
+    <li><strong>Result Submission</strong>: After broadcasting, your application reports the results back to FractaLedger via <code>POST /api/transactions/results</code>.</li>
+  </ol>
+  
+  <p>This architecture provides several benefits:</p>
+  <ul>
+    <li><strong>Flexibility</strong>: You can implement your own broadcasting logic.</li>
+    <li><strong>Security</strong>: Sensitive operations like broadcasting can be handled in a controlled environment.</li>
+    <li><strong>Customization</strong>: Different broadcasting methods can be used for different scenarios.</li>
+    <li><strong>Separation of Concerns</strong>: Transaction creation is separate from blockchain interaction.</li>
+  </ul>
+  
   <h3>Custom Transceivers</h3>
   <p>To support a specific blockchain, you need to implement a custom transceiver for that blockchain. FractaLedger provides a command-line tool for generating transceiver templates:</p>
   
