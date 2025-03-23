@@ -1,0 +1,103 @@
+<div class="content-section" id="extension-process">
+  <h2>Extension Process</h2>
+  <p>Here's the step-by-step process to extend FractaLedger:</p>
+  
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h4>Install FractaLedger</h4>
+      <div class="code-block">
+        <pre><code>npm install fractaledger</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h4>Initialize a New FractaLedger Project</h4>
+      <div class="code-block">
+        <pre><code>npx fractaledger-init --dir my-fractaledger-project</code></pre>
+      </div>
+      <p>This command creates a new project with the necessary directory structure and configuration files.</p>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h4>Navigate to Your Project Directory</h4>
+      <div class="code-block">
+        <pre><code>cd my-fractaledger-project</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <h4>Generate Custom Implementations</h4>
+      <p>Use the provided CLI tools to generate templates for your custom implementations:</p>
+      
+      <h5>For Transceivers:</h5>
+      <div class="code-block">
+        <pre><code>npx fractaledger-generate-transceiver --type bitcoin --output ./my-transceivers</code></pre>
+      </div>
+      
+      <h5>For API Extensions:</h5>
+      <div class="code-block">
+        <pre><code>npx fractaledger-generate-api-extension --type basic --output ./my-extensions --name my-custom-extension</code></pre>
+      </div>
+      
+      <h5>For Configuration:</h5>
+      <div class="code-block">
+        <pre><code>npx fractaledger-generate-config --output ./fractaledger.json</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">5</div>
+    <div class="step-content">
+      <h4>Customize the Generated Files</h4>
+      <p>Edit the generated files to implement your specific business logic and requirements.</p>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">6</div>
+    <div class="step-content">
+      <h4>Update Your Configuration</h4>
+      <p>Update your <code>fractaledger.json</code> file to point to your custom implementations:</p>
+      <div class="code-block">
+        <pre><code>{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./my-transceivers/bitcoin-transceiver.js",
+        "config": {
+          "apiUrl": "https://blockstream.info/api",
+          "monitoringInterval": 60000
+        }
+      }
+    }
+  ],
+  "api": {
+    "port": 3000,
+    "host": "localhost",
+    "extensions": [
+      {
+        "module": "./my-extensions/my-custom-extension.js"
+      }
+    ]
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+</div>

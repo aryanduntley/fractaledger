@@ -1,0 +1,108 @@
+<div class="content-section" id="balance-reconciliation">
+  <h2>Balance Reconciliation</h2>
+  <p>FractaLedger includes a robust balance reconciliation system that ensures the integrity of your wallet balances. This feature verifies that the sum of all internal wallet balances matches the actual on-chain balance of the primary wallet.</p>
+  
+  <h3>How It Works</h3>
+  <p>The balance reconciliation system periodically checks the on-chain balance of the primary wallet and compares it to the sum of all internal wallet balances. If a discrepancy is detected, it's recorded in the ledger and can trigger alerts or automatic corrective actions.</p>
+  
+  <div class="feature-diagram">
+    <img src="{{ '/assets/images/balance-reconciliation.png' | relative_url }}" alt="Balance Reconciliation Diagram" onerror="this.style.display='none'">
+    <div class="diagram-fallback">
+      <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      Balance Reconciliation                  │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Primary Wallet│    │ Sum of        │    │ Discrepancy  │ │
+│  │ Balance: 1.5  │ == │ Internal      │ => │ Detection    │ │
+│  │               │    │ Balances: 1.5 │    │              │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+  </div>
+  
+  <h3>Configuration</h3>
+  <p>Configure balance reconciliation in your <code>config.json</code> file:</p>
+  
+  <div class="code-block">
+    <pre><code>"balanceReconciliation": {
+  "strategy": "afterTransaction", 
+  "scheduledFrequency": 3600000,
+  "warningThreshold": 0.00001,
+  "strictMode": false
+}</code></pre>
+  </div>
+  
+  <ul>
+    <li><strong>strategy</strong>: When to perform reconciliation
+      <ul>
+        <li><code>afterTransaction</code>: Check after each transaction</li>
+        <li><code>scheduled</code>: Check at regular intervals</li>
+        <li><code>both</code>: Use both strategies</li>
+      </ul>
+    </li>
+    <li><strong>scheduledFrequency</strong>: Interval in milliseconds for scheduled reconciliation (default: 1 hour)</li>
+    <li><strong>warningThreshold</strong>: Minimum difference to trigger a warning (default: 0.00001)</li>
+    <li><strong>strictMode</strong>: If true, transactions will fail when discrepancies are detected</li>
+  </ul>
+  
+  <h3>API Endpoints</h3>
+  <p>FractaLedger provides several API endpoints for managing balance reconciliation:</p>
+  
+  <div class="endpoint-list">
+    <div class="endpoint">
+      <h4>Get Reconciliation Configuration</h4>
+      <div class="endpoint-header">
+        <span class="method get">GET</span>
+        <span class="path">/api/reconciliation/config</span>
+      </div>
+    </div>
+    
+    <div class="endpoint">
+      <h4>Reconcile a Specific Wallet</h4>
+      <div class="endpoint-header">
+        <span class="method post">POST</span>
+        <span class="path">/api/reconciliation/wallet/:blockchain/:name</span>
+      </div>
+    </div>
+    
+    <div class="endpoint">
+      <h4>Reconcile All Wallets</h4>
+      <div class="endpoint-header">
+        <span class="method post">POST</span>
+        <span class="path">/api/reconciliation/all</span>
+      </div>
+    </div>
+    
+    <div class="endpoint">
+      <h4>List Balance Discrepancies</h4>
+      <div class="endpoint-header">
+        <span class="method get">GET</span>
+        <span class="path">/api/reconciliation/discrepancies</span>
+      </div>
+    </div>
+    
+    <div class="endpoint">
+      <h4>Resolve a Discrepancy</h4>
+      <div class="endpoint-header">
+        <span class="method post">POST</span>
+        <span class="path">/api/reconciliation/discrepancies/:id/resolve</span>
+      </div>
+    </div>
+  </div>
+  
+  <h3>Discrepancy Resolution</h3>
+  <p>When a discrepancy is detected, it's recorded in the ledger with details about the difference. Administrators can review and resolve discrepancies through the API, providing a resolution description that explains the cause and action taken.</p>
+  
+  <div class="code-block">
+    <pre><code>curl -X POST http://localhost:3000/api/reconciliation/discrepancies/discrepancy_123/resolve \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "resolution": "Manual adjustment to correct for transaction fee not accounted for",
+    "adjustmentAmount": 0.0001
+  }'</code></pre>
+  </div>
+</div>

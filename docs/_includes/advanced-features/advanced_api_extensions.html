@@ -1,0 +1,111 @@
+<div class="content-section" id="api-extensions">
+  <h2>API Extensions</h2>
+  <p>FractaLedger allows you to extend the API with custom endpoints that implement your specific business logic. This is done through API extensions, which are JavaScript modules that register new endpoints with the API server.</p>
+  
+  <h3>Creating an API Extension</h3>
+  <p>You can create an API extension using the <code>generate-api-extension</code> tool:</p>
+  
+  <div class="code-block">
+    <pre><code>npx fractaledger-generate-api-extension --name my-extension --output ./api-extensions</code></pre>
+  </div>
+  
+  <p>This generates a new API extension file in the <code>./api-extensions</code> directory.</p>
+  
+  <h3>Example API Extension</h3>
+  <p>Here's an example API extension that adds endpoints for managing merchant fees:</p>
+  
+  <div class="code-block">
+    <pre><code>/**
+ * Merchant Fee API Extension
+ * 
+ * This extension adds endpoints for managing merchant fees and processing merchant transactions.
+ */
+
+/**
+ * Register the merchant fee extension with the API server
+ * @param {Object} app The Express app instance
+ * @param {Function} authenticateJWT The authentication middleware
+ * @param {Object} dependencies Additional dependencies (walletManager, fabricClient, etc.)
+ */
+function registerMerchantFeeExtension(app, authenticateJWT, dependencies) {
+  const { walletManager, fabricClient } = dependencies;
+  
+  /**
+   * Create fee configuration
+   * POST /api/fee-config
+   */
+  app.post('/api/fee-config', authenticateJWT, async (req, res) => {
+    try {
+      const { defaultFeePercentage, minFeeAmount, maxFeeAmount, merchantSpecificFees } = req.body;
+      
+      if (defaultFeePercentage === undefined) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Submit the fee configuration to the Fabric network
+      const result = await fabricClient.submitTransaction(
+        'updateFeeConfiguration',
+        defaultFeePercentage.toString(),
+        (minFeeAmount || 0).toString(),
+        (maxFeeAmount || 1).toString(),
+        JSON.stringify(merchantSpecificFees || {})
+      );
+      
+      const feeConfig = JSON.parse(result.toString());
+      
+      res.json(feeConfig);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  /**
+   * Process a merchant transaction
+   * POST /api/transactions/merchant
+   */
+  app.post('/api/transactions/merchant', authenticateJWT, async (req, res) => {
+    try {
+      const { fromWalletId, toWalletId, feeWalletId, amount } = req.body;
+      
+      if (!fromWalletId || !toWalletId || !feeWalletId || !amount) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Process the merchant transaction
+      const result = await fabricClient.submitTransaction(
+        'processMerchantTransaction',
+        fromWalletId,
+        toWalletId,
+        feeWalletId,
+        amount.toString()
+      );
+      
+      const transaction = JSON.parse(result.toString());
+      
+      res.json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
+
+module.exports = registerMerchantFeeExtension;</code></pre>
+  </div>
+  
+  <h3>Registering an API Extension</h3>
+  <p>To register your API extension with the FractaLedger system, you need to add it to the <code>api.extensions</code> array in your <code>config.json</code> file:</p>
+  
+  <div class="code-block">
+    <pre><code>"api": {
+  "port": 3000,
+  "host": "localhost",
+  "extensions": [
+    {
+      "module": "./api-extensions/merchant-fee-extension.js"
+    }
+  ]
+}</code></pre>
+  </div>
+  
+  <p>This registers your API extension with the FractaLedger API server, making your custom endpoints available for use.</p>
+</div>

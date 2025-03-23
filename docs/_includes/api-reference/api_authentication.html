@@ -1,0 +1,25 @@
+<div class="api-section" id="authentication">
+  <h2>Authentication</h2>
+  <p>FractaLedger uses JWT (JSON Web Tokens) for authentication. To access protected endpoints, you need to include the JWT token in the Authorization header of your requests.</p>
+
+  <div class="endpoint">
+    <h3>Login</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/auth/login</span>
+    </div>
+    <p>Authenticate a user and get a JWT token.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "username": "admin",
+  "password": "your-password"
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": "1d"
+}</code></pre>
+  </div>
+</div>

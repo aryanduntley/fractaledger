@@ -1,0 +1,62 @@
+<div class="api-section" id="reconciliation">
+  <h2>Reconciliation</h2>
+
+  <div class="endpoint">
+    <h3>Get Reconciliation Configuration</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/reconciliation/config</span>
+    </div>
+    <p>Get the current reconciliation configuration.</p>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "config": {
+    "strategy": "afterTransaction",
+    "scheduledFrequency": 3600000,
+    "warningThreshold": 0.00001,
+    "strictMode": false
+  }
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Reconcile a Specific Wallet</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/reconciliation/wallet/:blockchain/:name</span>
+    </div>
+    <p>Manually trigger reconciliation for a specific wallet.</p>
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>blockchain</code> - The blockchain type (e.g., bitcoin, litecoin)</li>
+      <li><code>name</code> - The wallet name</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "reconciliation": {
+    "blockchain": "bitcoin",
+    "walletName": "btc_wallet_1",
+    "primaryWalletBalance": 1.5,
+    "aggregateInternalBalance": 1.5,
+    "discrepancy": 0,
+    "timestamp": "2025-03-13T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_012",
+      "message": "Reconciliation completed successfully",
+      "data": {
+        "blockchain": "bitcoin",
+        "walletName": "btc_wallet_1",
+        "discrepancy": 0
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+</div>

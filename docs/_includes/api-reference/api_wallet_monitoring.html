@@ -1,0 +1,134 @@
+<div class="api-section" id="wallet-monitoring">
+  <h2>Wallet Monitoring</h2>
+
+  <div class="endpoint">
+    <h3>Start Monitoring a Wallet Address</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/wallets/:blockchain/:name/monitor</span>
+    </div>
+    <p>Start monitoring a wallet address for incoming transactions.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>blockchain</code> - The blockchain type (e.g., bitcoin, litecoin)</li>
+      <li><code>name</code> - The wallet name</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "monitoring": {
+    "blockchain": "bitcoin",
+    "walletName": "btc_wallet_1",
+    "walletAddress": "bc1q...",
+    "status": "monitoring",
+    "startedAt": "2025-03-13T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_007",
+      "message": "Wallet monitoring started",
+      "data": {
+        "blockchain": "bitcoin",
+        "walletName": "btc_wallet_1"
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Stop Monitoring a Wallet Address</h3>
+    <div class="endpoint-header">
+      <span class="method delete">DELETE</span>
+      <span class="path">/api/wallets/:blockchain/:name/monitor</span>
+    </div>
+    <p>Stop monitoring a wallet address.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>blockchain</code> - The blockchain type (e.g., bitcoin, litecoin)</li>
+      <li><code>name</code> - The wallet name</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "monitoring": {
+    "blockchain": "bitcoin",
+    "walletName": "btc_wallet_1",
+    "walletAddress": "bc1q...",
+    "status": "stopped",
+    "stoppedAt": "2025-03-13T12:30:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_008",
+      "message": "Wallet monitoring stopped",
+      "data": {
+        "blockchain": "bitcoin",
+        "walletName": "btc_wallet_1"
+      },
+      "timestamp": "2025-03-13T12:30:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Get Transaction History for a Wallet</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/wallets/:blockchain/:name/transactions</span>
+    </div>
+    <p>Get transaction history for a specific wallet.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>blockchain</code> - The blockchain type (e.g., bitcoin, litecoin)</li>
+      <li><code>name</code> - The wallet name</li>
+    </ul>
+
+    <h4>Query Parameters</h4>
+    <ul>
+      <li><code>page</code> - Page number (default: 1)</li>
+      <li><code>limit</code> - Number of transactions per page (default: 10)</li>
+      <li><code>startDate</code> - Filter by start date (ISO format)</li>
+      <li><code>endDate</code> - Filter by end date (ISO format)</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "transactions": [
+    {
+      "txid": "abcdef1234567890...",
+      "blockHeight": 700000,
+      "timestamp": "2025-03-13T12:00:00Z",
+      "amount": 0.1,
+      "fee": 0.0001,
+      "confirmations": 10,
+      "type": "incoming"
+    },
+    {
+      "txid": "0987654321fedcba...",
+      "blockHeight": 699990,
+      "timestamp": "2025-03-13T11:30:00Z",
+      "amount": 0.2,
+      "fee": 0.0001,
+      "confirmations": 20,
+      "type": "outgoing"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "totalItems": 2,
+    "totalPages": 1
+  }
+}</code></pre>
+  </div>
+</div>

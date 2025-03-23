@@ -1,0 +1,73 @@
+<div class="content-section" id="internal-transfers">
+  <h2>Internal Wallet Transfers</h2>
+  <p>Internal wallet transfers allow you to move funds between internal wallets that are mapped to the same primary on-chain wallet without requiring on-chain transactions. This feature is particularly useful for:</p>
+  
+  <ul>
+    <li>Transferring funds between users within the same system</li>
+    <li>Reallocating funds between different internal wallets</li>
+    <li>Implementing internal payment systems without incurring blockchain transaction fees</li>
+  </ul>
+  
+  <div class="feature-diagram">
+    <img src="{{ '/assets/images/internal-transfers.png' | relative_url }}" alt="Internal Transfers Diagram" onerror="this.style.display='none'">
+    <div class="diagram-fallback">
+      <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      Primary Wallet                          │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Internal      │    │ Internal      │    │ Internal     │ │
+│  │ Wallet A      │───▶│ Wallet B      │───▶│ Wallet C     │ │
+│  │ Balance: 0.5  │    │ Balance: 0.3  │    │ Balance: 0.2 │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+  </div>
+  
+  <h3>How It Works</h3>
+  <p>Internal transfers are processed entirely within the Hyperledger Fabric ledger and do not create on-chain transactions. This makes them:</p>
+  <ul>
+    <li><strong>Instant</strong>: No need to wait for blockchain confirmations</li>
+    <li><strong>Free</strong>: No blockchain transaction fees</li>
+    <li><strong>Private</strong>: Not visible on the public blockchain</li>
+  </ul>
+  
+  <h3>API Endpoint</h3>
+  <p>You can perform internal transfers using the <code>POST /api/transactions/internal-transfer</code> endpoint:</p>
+  
+  <div class="code-block">
+    <pre><code>curl -X POST http://localhost:3000/api/transactions/internal-transfer \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "fromInternalWalletId": "internal_wallet_1",
+    "toInternalWalletId": "internal_wallet_2",
+    "amount": 0.1,
+    "memo": "Payment for services"
+  }'</code></pre>
+  </div>
+  
+  <h3>Implementation Example</h3>
+  <p>Here's an example of how to perform an internal transfer using the FractaLedger JavaScript SDK:</p>
+  
+  <div class="code-block">
+    <pre><code>const fractaledger = require('fractaledger');
+
+async function transferFunds() {
+  try {
+    const result = await fractaledger.internalTransfer({
+      fromInternalWalletId: 'internal_wallet_1',
+      toInternalWalletId: 'internal_wallet_2',
+      amount: 0.1,
+      memo: 'Payment for services'
+    });
+    
+    console.log('Transfer successful:', result);
+  } catch (error) {
+    console.error('Transfer failed:', error);
+  }
+}</code></pre>
+  </div>
+</div>

@@ -1,0 +1,75 @@
+<div class="api-section" id="error-handling">
+  <h2>Error Handling</h2>
+  <p>FractaLedger API uses a consistent error format across all endpoints. When an error occurs, the API returns a JSON response with an error message and code.</p>
+
+  <h3>Error Response Format</h3>
+  <pre><code>{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {
+      // Additional error details (optional)
+    }
+  }
+}</code></pre>
+
+  <h3>Common Error Codes</h3>
+  <table class="error-codes">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>AUTH_001</td>
+        <td>Authentication failed. Invalid credentials.</td>
+      </tr>
+      <tr>
+        <td>AUTH_002</td>
+        <td>JWT token expired.</td>
+      </tr>
+      <tr>
+        <td>AUTH_003</td>
+        <td>Insufficient permissions.</td>
+      </tr>
+      <tr>
+        <td>WALLET_001</td>
+        <td>Wallet not found.</td>
+      </tr>
+      <tr>
+        <td>WALLET_002</td>
+        <td>Invalid wallet address format.</td>
+      </tr>
+      <tr>
+        <td>INTERNAL_WALLET_001</td>
+        <td>Internal wallet not found.</td>
+      </tr>
+      <tr>
+        <td>INTERNAL_WALLET_002</td>
+        <td>Insufficient balance in internal wallet.</td>
+      </tr>
+      <tr>
+        <td>TX_001</td>
+        <td>Transaction failed to broadcast.</td>
+      </tr>
+      <tr>
+        <td>TX_002</td>
+        <td>Invalid transaction format.</td>
+      </tr>
+      <tr>
+        <td>CHAINCODE_001</td>
+        <td>Chaincode deployment failed.</td>
+      </tr>
+      <tr>
+        <td>CHAINCODE_002</td>
+        <td>Chaincode execution failed.</td>
+      </tr>
+      <tr>
+        <td>SERVER_001</td>
+        <td>Internal server error.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,44 @@
+<div class="content-section" id="overview">
+  <h2>Overview</h2>
+  <p>FractaLedger has been designed to be published as an npm package while allowing users to extend and customize it without modifying files in the <code>node_modules</code> directory. This is important because any changes to files in <code>node_modules</code> would be lost when updating the package.</p>
+  
+  <p>The extension system follows these key principles:</p>
+  <ul>
+    <li><strong>Non-invasive:</strong> All customizations are made outside the <code>node_modules</code> directory</li>
+    <li><strong>Template-based:</strong> CLI tools generate starter templates for your custom implementations</li>
+    <li><strong>Configuration-driven:</strong> Your custom implementations are connected to the system through configuration</li>
+    <li><strong>Modular:</strong> You can extend specific parts of the system without affecting others</li>
+  </ul>
+  
+  <div class="extension-diagram">
+    <img src="{{ '/assets/images/extension-architecture.png' | relative_url }}" alt="Extension Architecture Diagram" onerror="this.style.display='none'">
+    <div class="diagram-fallback">
+      <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      Your Project                           │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Custom        │    │ Custom API    │    │ Custom       │ │
+│  │ Transceivers  │    │ Extensions    │    │ Chaincode    │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                              │                              │
+│                     ┌────────┴─────────┐                    │
+│                     │  Configuration   │                    │
+│                     └────────┬─────────┘                    │
+│                              │                              │
+└──────────────────────────────┼──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      node_modules                            │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ FractaLedger  │    │ Core          │    │ Extension    │ │
+│  │ Core          │───▶│ Components    │───▶│ System       │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+  </div>
+</div>

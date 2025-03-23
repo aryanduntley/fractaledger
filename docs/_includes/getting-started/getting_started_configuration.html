@@ -1,0 +1,54 @@
+<div class="content-section" id="configuration">
+  <h2>Configuration</h2>
+  <p>FractaLedger uses a configuration-based approach that allows you to specify how to connect to various blockchains and how to manage your wallets.</p>
+  
+  <h3>Configuration Files</h3>
+  <p>There are two main configuration files:</p>
+  <ul>
+    <li><code>fractaledger.json</code> - Main configuration file for blockchain connections, wallet management, and system settings</li>
+    <li><code>.env</code> - Environment variables file for sensitive information like private keys and API keys</li>
+  </ul>
+  
+  <h3>Example Configuration</h3>
+  <p>Here's a simplified example of a <code>fractaledger.json</code> file:</p>
+  
+  <div class="code-block">
+    <pre><code>{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./transceivers/utxo-transceiver.js",
+        "config": {
+          "apiUrl": "https://blockstream.info/api",
+          "monitoringInterval": 60000
+        }
+      }
+    }
+  ],
+  "api": {
+    "port": 3000,
+    "host": "localhost"
+  }
+}</code></pre>
+  </div>
+  
+  <p>And here's an example of a <code>.env</code> file:</p>
+  
+  <div class="code-block">
+    <pre><code># Bitcoin wallet secrets
+BTC_WALLET_1_SECRET=your-private-key-or-seed-phrase
+
+# API configuration
+JWT_SECRET=your-jwt-secret
+API_PORT=3000</code></pre>
+  </div>
+  
+  <div class="note">
+    <strong>Important:</strong> Never commit your <code>.env</code> file to version control. It contains sensitive information that should be kept secure.
+  </div>
+</div>

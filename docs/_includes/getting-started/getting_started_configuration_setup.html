@@ -1,0 +1,82 @@
+<div class="content-section" id="configuration-setup">
+  <h2>Configuration Setup</h2>
+  <p>FractaLedger requires proper configuration to connect to blockchain networks and manage wallets. This section will guide you through setting up the necessary configuration files.</p>
+  
+  <h3>Setting Up Configuration Files</h3>
+  
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h4>Create Configuration Files</h4>
+      <p>After installing FractaLedger, you need to create configuration files based on the provided templates:</p>
+      <div class="code-block">
+        <pre><code># Copy the configuration template
+cp fractaledger-template.json fractaledger.json
+
+# Copy the environment variables template
+cp .env.example .env</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h4>Edit Configuration Files</h4>
+      <p>Edit the <code>fractaledger.json</code> file to configure your blockchain connections and wallet settings:</p>
+      <div class="code-block">
+        <pre><code>{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "YOUR_WALLET_ADDRESS",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./transceivers/utxo-transceiver.js",
+        "config": {
+          "apiUrl": "https://blockstream.info/api",
+          "monitoringInterval": 60000
+        }
+      }
+    }
+  ],
+  "api": {
+    "port": 3000,
+    "host": "localhost"
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h4>Set Environment Variables</h4>
+      <p>Edit the <code>.env</code> file to set your wallet secrets and other sensitive information:</p>
+      <div class="code-block">
+        <pre><code># Wallet secrets
+BTC_WALLET_1_SECRET=your_wallet_private_key_or_seed
+
+# API configuration
+JWT_SECRET=your_jwt_secret
+API_PORT=3000</code></pre>
+      </div>
+      <p><strong>Important:</strong> Never commit your <code>.env</code> file to version control. It contains sensitive information that should be kept secure.</p>
+    </div>
+  </div>
+  
+  <div class="step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <h4>Verify Configuration</h4>
+      <p>You can verify your configuration by running the following command:</p>
+      <div class="code-block">
+        <pre><code>npx fractaledger-verify-config</code></pre>
+      </div>
+      <p>This command checks your configuration files for errors and provides suggestions for improvement.</p>
+    </div>
+  </div>
+</div>

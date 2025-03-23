@@ -1,0 +1,130 @@
+<div class="api-section" id="wallet-management">
+  <h2>Wallet Management</h2>
+
+  <div class="endpoint">
+    <h3>Register a New Wallet</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/wallets</span>
+    </div>
+    <p>Register a new blockchain wallet with the system.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "blockchain": "bitcoin",
+  "name": "btc_wallet_1",
+  "network": "mainnet",
+  "walletAddress": "bc1q...",
+  "secretEnvVar": "BTC_WALLET_1_SECRET",
+  "transceiver": {
+    "method": "callback",
+    "callbackModule": "./transceivers/utxo-transceiver.js",
+    "monitoringInterval": 60000,
+    "autoMonitor": true
+  }
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "wallet": {
+    "blockchain": "bitcoin",
+    "name": "btc_wallet_1",
+    "network": "mainnet",
+    "walletAddress": "bc1q...",
+    "secretEnvVar": "BTC_WALLET_1_SECRET"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_002",
+      "message": "Wallet created successfully",
+      "data": {
+        "blockchain": "bitcoin",
+        "name": "btc_wallet_1"
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>List All Registered Wallets</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/wallets</span>
+    </div>
+    <p>Get a list of all registered wallets.</p>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "wallets": [
+    {
+      "blockchain": "bitcoin",
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "bc1q..."
+    },
+    {
+      "blockchain": "litecoin",
+      "name": "ltc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "ltc1q..."
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Get Wallet Details</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/wallets/:blockchain/:name</span>
+    </div>
+    <p>Get details for a specific wallet.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>blockchain</code> - The blockchain type (e.g., bitcoin, litecoin)</li>
+      <li><code>name</code> - The wallet name</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "wallet": {
+    "blockchain": "bitcoin",
+    "name": "btc_wallet_1",
+    "network": "mainnet",
+    "walletAddress": "bc1q...",
+    "balance": 1.5
+  }
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Get Read-Only Wallet Access</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/wallets/:blockchain/:name/read-only</span>
+    </div>
+    <p>Get read-only information about a wallet, including aggregate internal balance.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>blockchain</code> - The blockchain type (e.g., bitcoin, litecoin)</li>
+      <li><code>name</code> - The wallet name</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "blockchain": "bitcoin",
+  "name": "btc_wallet_1",
+  "address": "bc1q...",
+  "balance": 1.5,
+  "aggregateInternalBalance": 1.2,
+  "excessBalance": 0.3,
+  "baseInternalWalletId": "base_wallet_bitcoin_btc_wallet_1"
+}</code></pre>
+  </div>
+</div>

@@ -1,0 +1,61 @@
+<div class="content-section" id="first-steps">
+  <h2>First Steps</h2>
+  <p>Now that you have FractaLedger installed and configured, let's go through some basic operations to get you started.</p>
+  
+  <h3>Creating a Transceiver</h3>
+  <p>FractaLedger uses transceivers to interact with blockchains. You can generate a custom transceiver for your blockchain:</p>
+  
+  <div class="code-block">
+    <pre><code>npx fractaledger-generate-transceiver --type bitcoin --output ./my-transceivers</code></pre>
+  </div>
+  
+  <p>This command generates a custom transceiver implementation for Bitcoin in the <code>./my-transceivers</code> directory.</p>
+  
+  <h3>Creating an Internal Wallet</h3>
+  <p>You can create an internal wallet using the API:</p>
+  
+  <div class="code-block">
+    <pre><code>curl -X POST http://localhost:3000/api/internal-wallets \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "id": "internal_wallet_1",
+    "blockchain": "bitcoin",
+    "primaryWalletName": "btc_wallet_1",
+    "description": "Customer wallet for user123",
+    "metadata": {
+      "userId": "user123",
+      "customerType": "premium"
+    }
+  }'</code></pre>
+  </div>
+  
+  <h3>Making an Internal Transfer</h3>
+  <p>You can transfer funds between internal wallets:</p>
+  
+  <div class="code-block">
+    <pre><code>curl -X POST http://localhost:3000/api/transactions/internal-transfer \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "fromInternalWalletId": "internal_wallet_1",
+    "toInternalWalletId": "internal_wallet_2",
+    "amount": 0.1,
+    "memo": "Payment for services"
+  }'</code></pre>
+  </div>
+  
+  <h3>Withdrawing Funds</h3>
+  <p>You can withdraw funds from an internal wallet to an external address:</p>
+  
+  <div class="code-block">
+    <pre><code>curl -X POST http://localhost:3000/api/internal-wallets/internal_wallet_1/withdraw \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "toAddress": "bc1q...",
+    "amount": 0.1,
+    "fee": 0.0001
+  }'</code></pre>
+  </div>
+</div>

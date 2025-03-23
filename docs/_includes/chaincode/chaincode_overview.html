@@ -1,0 +1,42 @@
+<div class="content-section" id="overview">
+  <h2>Overview</h2>
+  <p>In FractaLedger, chaincode (smart contracts) runs on the Hyperledger Fabric network and provides the business logic for your application. The chaincode is responsible for:</p>
+  
+  <ul>
+    <li>Managing internal wallet balances</li>
+    <li>Processing internal transfers</li>
+    <li>Implementing custom business logic (fee calculations, distribution rules, etc.)</li>
+    <li>Maintaining the state of the system</li>
+  </ul>
+  
+  <p>FractaLedger uses a single chaincode deployment for the entire system, but you can customize this chaincode to implement your specific business requirements. The system provides several chaincode templates that you can use as a starting point for your customization.</p>
+  
+  <div class="architecture-diagram">
+    <img src="{{ '/assets/images/chaincode-architecture.png' | relative_url }}" alt="Chaincode Architecture Diagram" onerror="this.style.display='none'">
+    <div class="diagram-fallback">
+      <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      FractaLedger Core                       │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ API Server    │    │ Wallet        │    │ Blockchain    │ │
+│  │               │───▶│ Manager       │───▶│ Connector     │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                              │                              │
+└──────────────────────────────┼──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Hyperledger Fabric                        │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Channel       │    │ Chaincode     │    │ World State   │ │
+│  │               │───▶│ (Smart        │───▶│ (Ledger)      │ │
+│  │               │    │  Contract)    │    │               │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+  </div>
+</div>

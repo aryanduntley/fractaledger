@@ -1,0 +1,317 @@
+<div class="content-section" id="extension-points">
+  <h2>Extension Points</h2>
+  <p>FractaLedger provides several extension points that allow you to customize the system to meet your specific requirements.</p>
+  
+  <div class="extension-point" id="transceivers">
+    <h3>Transceivers</h3>
+    <p>Transceivers handle blockchain interactions, including transaction broadcasting and wallet monitoring. They serve as the bridge between FractaLedger and the blockchain networks.</p>
+    
+    <h4>What You Can Customize</h4>
+    <ul>
+      <li>Transaction broadcasting logic</li>
+      <li>Wallet address monitoring</li>
+      <li>Balance retrieval</li>
+      <li>Transaction history retrieval</li>
+      <li>UTXO (Unspent Transaction Output) management</li>
+      <li>Blockchain API integration</li>
+    </ul>
+    
+    <h4>How to Implement</h4>
+    <p>Create a custom transceiver by implementing the <code>UTXOTransceiver</code> interface:</p>
+    
+    <div class="code-block">
+      <pre><code>const { UTXOTransceiver } = require('fractaledger');
+
+class MyCustomTransceiver extends UTXOTransceiver {
+  constructor(config = {}) {
+    super(config);
+    
+    // Initialize your transceiver
+    this.apiUrl = config.apiUrl || 'https://your-blockchain-api.com';
+    this.monitoringIntervals = {};
+    this.processedTransactions = new Set();
+  }
+  
+  async broadcastTransaction(txHex, metadata = {}) {
+    // Implement transaction broadcasting logic
+    // ...
+    return { success: true, txid: '...' };
+  }
+  
+  async startMonitoring(address, options = {}) {
+    // Implement wallet monitoring logic
+    // ...
+    return { success: true };
+  }
+  
+  async stopMonitoring(address) {
+    // Implement logic to stop monitoring
+    // ...
+    return { success: true };
+  }
+  
+  async getBalance(address) {
+    // Implement balance retrieval logic
+    // ...
+    return 1.5; // Balance in BTC/LTC/etc.
+  }
+  
+  async getTransactionHistory(address, options = {}) {
+    // Implement transaction history retrieval
+    // ...
+    return []; // Array of transactions
+  }
+  
+  async getUTXOs(address) {
+    // Implement UTXO retrieval logic
+    // ...
+    return []; // Array of UTXOs
+  }
+}
+
+module.exports = MyCustomTransceiver;</code></pre>
+    </div>
+    
+    <h4>Configuration</h4>
+    <p>In your <code>fractaledger.json</code> file, reference your custom transceiver:</p>
+    
+    <div class="code-block">
+      <pre><code>"bitcoin": [
+  {
+    "name": "btc_wallet_1",
+    "network": "mainnet",
+    "walletAddress": "bc1q...",
+    "secretEnvVar": "BTC_WALLET_1_SECRET",
+    "transceiver": {
+      "method": "callback",
+      "module": "./my-transceivers/my-custom-transceiver.js",
+      "config": {
+        "apiUrl": "https://your-blockchain-api.com",
+        "monitoringInterval": 60000
+      }
+    }
+  }
+]</code></pre>
+    </div>
+  </div>
+  
+  <div class="extension-point" id="api-extensions">
+    <h3>API Extensions</h3>
+    <p>API extensions allow you to add custom endpoints to the FractaLedger API server. This is useful for implementing domain-specific functionality or integrating with other systems.</p>
+    
+    <h4>What You Can Customize</h4>
+    <ul>
+      <li>Custom API endpoints</li>
+      <li>Domain-specific business logic</li>
+      <li>Integration with external systems</li>
+      <li>Custom authentication and authorization</li>
+      <li>Specialized data processing</li>
+    </ul>
+    
+    <h4>How to Implement</h4>
+    <p>Create a custom API extension:</p>
+    
+    <div class="code-block">
+      <pre><code>/**
+ * My Custom API Extension
+ * 
+ * This extension adds endpoints for a custom feature.
+ */
+
+/**
+ * Register the custom extension with the API server
+ * @param {Object} app The Express app instance
+ * @param {Function} authenticateJWT The authentication middleware
+ * @param {Object} dependencies Additional dependencies (walletManager, fabricClient, etc.)
+ */
+function registerMyExtension(app, authenticateJWT, dependencies) {
+  const { walletManager, fabricClient } = dependencies;
+  
+  /**
+   * Create a custom feature
+   * POST /api/custom-feature
+   */
+  app.post('/api/custom-feature', authenticateJWT, async (req, res) => {
+    try {
+      const { name, config } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Implement your custom logic here
+      // ...
+      
+      res.json({ success: true, name, config });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  /**
+   * Get custom features
+   * GET /api/custom-features
+   */
+  app.get('/api/custom-features', authenticateJWT, async (req, res) => {
+    try {
+      // Implement your custom logic here
+      // ...
+      
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
+
+module.exports = registerMyExtension;</code></pre>
+    </div>
+    
+    <h4>Configuration</h4>
+    <p>In your <code>fractaledger.json</code> file, register your API extension:</p>
+    
+    <div class="code-block">
+      <pre><code>"api": {
+  "port": 3000,
+  "host": "localhost",
+  "extensions": [
+    {
+      "module": "./my-extensions/my-custom-extension.js"
+    }
+  ]
+}</code></pre>
+    </div>
+  </div>
+  
+  <div class="extension-point" id="chaincode">
+    <h3>Chaincode (Smart Contracts)</h3>
+    <p>Chaincode is the smart contract code that runs on the Hyperledger Fabric network. It defines the business logic for your FractaLedger application.</p>
+    
+    <h4>What You Can Customize</h4>
+    <ul>
+      <li>Fund distribution rules</li>
+      <li>Fee structures</li>
+      <li>Withdrawal logic</li>
+      <li>Transaction frequency controls</li>
+      <li>Custom business logic</li>
+    </ul>
+    
+    <h4>How to Implement</h4>
+    <p>Create a custom chaincode based on one of the provided templates:</p>
+    
+    <ol>
+      <li>Create a directory for your custom chaincode:
+        <div class="code-block">
+          <pre><code>mkdir -p src/chaincode/custom/my-custom-chaincode</code></pre>
+        </div>
+      </li>
+      <li>Copy files from a template:
+        <div class="code-block">
+          <pre><code>cp -r src/chaincode/templates/merchant-fee/* src/chaincode/custom/my-custom-chaincode/</code></pre>
+        </div>
+      </li>
+      <li>Customize the chaincode files to implement your business logic.</li>
+    </ol>
+    
+    <p>Example of a custom chaincode implementation:</p>
+    
+    <div class="code-block">
+      <pre><code>const { Contract } = require('fabric-contract-api');
+
+class MyCustomContract extends Contract {
+  async initLedger(ctx) {
+    // Initialize the ledger
+    // ...
+  }
+  
+  async createInternalWallet(ctx, id, primaryWalletId, description, metadata) {
+    // Create an internal wallet
+    // ...
+  }
+  
+  async internalTransfer(ctx, fromWalletId, toWalletId, amount, memo) {
+    // Implement internal transfer logic
+    // ...
+  }
+  
+  async processCustomTransaction(ctx, fromWalletId, toWalletId, amount, customData) {
+    // Implement your custom transaction logic
+    // ...
+  }
+}
+
+module.exports = MyCustomContract;</code></pre>
+    </div>
+    
+    <h4>Configuration</h4>
+    <p>In your <code>fractaledger.json</code> file, reference your custom chaincode:</p>
+    
+    <div class="code-block">
+      <pre><code>"hyperledger": {
+  "chaincodePath": "./src/chaincode/custom/my-custom-chaincode",
+  "channelName": "fractaledger-channel",
+  "chaincodeName": "fractaledger-chaincode"
+}</code></pre>
+    </div>
+  </div>
+  
+  <div class="extension-point" id="configuration">
+    <h3>Configuration</h3>
+    <p>The configuration file (<code>fractaledger.json</code>) controls how FractaLedger connects to blockchains and manages wallets.</p>
+    
+    <h4>What You Can Customize</h4>
+    <ul>
+      <li>Blockchain connection details</li>
+      <li>Wallet configurations</li>
+      <li>Transceiver methods</li>
+      <li>Balance reconciliation settings</li>
+      <li>Base internal wallet settings</li>
+      <li>API server configuration</li>
+    </ul>
+    
+    <h4>Example Configuration</h4>
+    <p>Here's a comprehensive example of a <code>fractaledger.json</code> file:</p>
+    
+    <div class="code-block">
+      <pre><code>{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./my-transceivers/bitcoin-transceiver.js",
+        "config": {
+          "apiUrl": "https://blockstream.info/api",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
+      }
+    }
+  ],
+  "api": {
+    "port": 3000,
+    "host": "localhost",
+    "extensions": [
+      {
+        "module": "./my-extensions/my-custom-extension.js"
+      }
+    ]
+  },
+  "baseInternalWallet": {
+    "namePrefix": "base_wallet_",
+    "description": "Represents excess funds in the primary on-chain wallet",
+    "createOnInitialization": true
+  },
+  "balanceReconciliation": {
+    "strategy": "afterTransaction",
+    "scheduledFrequency": 3600000,
+    "warningThreshold": 0.00001,
+    "strictMode": false
+  }
+}</code></pre>
+    </div>
+  </div>
+</div>

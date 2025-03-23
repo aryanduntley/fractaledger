@@ -1,0 +1,78 @@
+<div class="content-section" id="deploying">
+  <h2>Deploying Chaincode</h2>
+  <p>Once you've customized your chaincode, you need to deploy it to the Hyperledger Fabric network. FractaLedger provides several ways to deploy chaincode:</p>
+  
+  <div class="deployment-card">
+    <div class="deployment-header">
+      <div class="deployment-icon">
+        <i class="fas fa-rocket"></i>
+      </div>
+      <h3>API Deployment</h3>
+    </div>
+    <div class="deployment-content">
+      <p>You can deploy chaincode using the API endpoints. This approach is useful for applications that need to manage chaincode programmatically.</p>
+      <div class="code-block">
+        <pre><code>curl -X POST http://localhost:3000/api/chaincode/custom/my-merchant-fee/deploy \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</code></pre>
+      </div>
+      <p>This deploys the custom chaincode to the Hyperledger Fabric network, making it available for use by the FractaLedger system.</p>
+    </div>
+  </div>
+  
+  <div class="deployment-card">
+    <div class="deployment-header">
+      <div class="deployment-icon">
+        <i class="fas fa-terminal"></i>
+      </div>
+      <h3>CLI Deployment</h3>
+    </div>
+    <div class="deployment-content">
+      <p>You can deploy chaincode using the Hyperledger Fabric CLI tools. This approach is useful for development and testing.</p>
+      <div class="code-block">
+        <pre><code>cd fabric-samples/test-network
+./network.sh deployCC -ccn fractaledger-chaincode -ccp /path/to/src/chaincode/custom/my-merchant-fee -ccl javascript</code></pre>
+      </div>
+      <p>This deploys the custom chaincode to the Hyperledger Fabric network using the Fabric CLI tools.</p>
+    </div>
+  </div>
+  
+  <div class="deployment-card">
+    <div class="deployment-header">
+      <div class="deployment-icon">
+        <i class="fas fa-cogs"></i>
+      </div>
+      <h3>Automated Deployment</h3>
+    </div>
+    <div class="deployment-content">
+      <p>You can set up automated deployment using CI/CD pipelines. This approach is useful for production environments.</p>
+      <p>Example GitHub Actions workflow:</p>
+      <div class="code-block">
+        <pre><code>name: Deploy Chaincode
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/chaincode/custom/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install dependencies
+        run: npm install
+      - name: Deploy chaincode
+        run: |
+          curl -X POST http://your-fractaledger-api/api/chaincode/custom/my-merchant-fee/deploy \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}"</code></pre>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,82 @@
+<div class="content-section" id="monitoring">
+  <h2>Monitoring and Alerting</h2>
+  <p>FractaLedger includes a monitoring and alerting system that helps you keep track of your wallets and transactions. This system can notify you of important events, such as low wallet balances, failed transactions, or balance discrepancies.</p>
+  
+  <h3>Configuration</h3>
+  <p>Configure monitoring and alerting in your <code>config.json</code> file:</p>
+  
+  <div class="code-block">
+    <pre><code>"monitoring": {
+  "interval": 60000,
+  "healthCheck": {
+    "enabled": true,
+    "failureThreshold": 3,
+    "successThreshold": 1
+  },
+  "alerting": {
+    "enabled": true,
+    "email": {
+      "enabled": true,
+      "recipients": ["admin@example.com"],
+      "smtpServer": "smtp.example.com",
+      "smtpPort": 587,
+      "smtpUser": "alerts@example.com",
+      "smtpPasswordEnvVar": "SMTP_PASSWORD"
+    },
+    "slack": {
+      "enabled": true,
+      "webhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+    }
+  }
+}</code></pre>
+  </div>
+  
+  <h3>Health Checks</h3>
+  <p>FractaLedger performs regular health checks to ensure that all components of the system are functioning properly. If a health check fails, an alert is triggered.</p>
+  
+  <h3>Alerting Channels</h3>
+  <p>FractaLedger supports multiple alerting channels:</p>
+  
+  <div class="alerting-channels">
+    <div class="alerting-channel">
+      <div class="alerting-icon">
+        <i class="fas fa-envelope"></i>
+      </div>
+      <div class="alerting-content">
+        <h4>Email</h4>
+        <p>Send alerts to one or more email addresses.</p>
+      </div>
+    </div>
+    
+    <div class="alerting-channel">
+      <div class="alerting-icon">
+        <i class="fab fa-slack"></i>
+      </div>
+      <div class="alerting-content">
+        <h4>Slack</h4>
+        <p>Send alerts to a Slack channel using a webhook URL.</p>
+      </div>
+    </div>
+    
+    <div class="alerting-channel">
+      <div class="alerting-icon">
+        <i class="fas fa-code"></i>
+      </div>
+      <div class="alerting-content">
+        <h4>Custom Channels</h4>
+        <p>Implement custom alerting channels by extending the alerting system.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h3>Alert Types</h3>
+  <p>FractaLedger can generate alerts for various events:</p>
+  
+  <ul>
+    <li><strong>Low Wallet Balance</strong>: When a primary wallet balance falls below a threshold</li>
+    <li><strong>Failed Transaction</strong>: When a transaction fails to broadcast or confirm</li>
+    <li><strong>Balance Discrepancy</strong>: When a balance reconciliation detects a discrepancy</li>
+    <li><strong>System Error</strong>: When a system component encounters an error</li>
+    <li><strong>Health Check Failure</strong>: When a health check fails</li>
+  </ul>
+</div>

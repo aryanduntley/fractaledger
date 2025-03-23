@@ -620,6 +620,13 @@ FractaLedger provides comprehensive documentation across various files. Here's a
 
 ### Component Documentation
 - [docs/BaseInternalWallet.md](docs/BaseInternalWallet.md) - Base internal wallet documentation
+- [docs/InternalWalletFunding.md]
+- [docs/InternalWalletFundingAndPrimaryWallet.md]
+- [docs/InternalWalletFundingSufficientFundsCheck.md]
+- [docs/InternalWalletFundingSummary.md]
+- [docs/InternalWalletFundingEndpointExplanation.md]
+- [docs/TransceiverSystemDocumentation.md]
+- [docs/TransceiverEndpointsGuide.md]
 - [api-extensions/README.md](api-extensions/README.md) - API extensions documentation
 - [transceivers/README.md](transceivers/README.md) - Transceivers documentation
 - [logs/README.md](logs/README.md) - Logs directory documentation

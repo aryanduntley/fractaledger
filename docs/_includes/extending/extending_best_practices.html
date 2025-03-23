@@ -1,0 +1,104 @@
+<div class="content-section" id="best-practices">
+  <h2>Best Practices</h2>
+  <p>Follow these best practices when extending FractaLedger:</p>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Keep Custom Files Outside node_modules</h3>
+      <p>All customizations should be in your project directory, not in the <code>node_modules</code> directory. This ensures your customizations won't be lost when updating the package.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Use Relative Paths in Configuration</h3>
+      <p>Your configuration file should point to your custom files using relative paths. This makes your project more portable and easier to deploy.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Follow the Provided Templates</h3>
+      <p>Use the generated templates as a starting point for your customizations. They provide the correct structure and interface implementations.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Test Thoroughly</h3>
+      <p>Make sure your custom implementations work correctly before deploying to production. FractaLedger provides testing utilities to help you test your customizations.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Implement Error Handling</h3>
+      <p>Add proper error handling to your custom implementations. This helps with debugging and ensures your application can recover from failures.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Use Environment Variables for Secrets</h3>
+      <p>Never hardcode sensitive information like API keys or private keys in your code. Use environment variables and reference them in your configuration.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Document Your Extensions</h3>
+      <p>Add comments and documentation to your custom implementations. This helps other developers understand your code and makes maintenance easier.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Use Automatic Monitoring</h3>
+      <p>When implementing custom transceivers, use the <code>autoMonitor</code> configuration option to automatically start monitoring wallet addresses when the system starts up.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Implement Reconnection Logic</h3>
+      <p>When using real-time connections to blockchain nodes or services, implement robust reconnection logic to handle network interruptions.</p>
+    </div>
+  </div>
+  
+  <div class="best-practice-card">
+    <div class="best-practice-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="best-practice-content">
+      <h3>Use Balance Reconciliation</h3>
+      <p>Enable the balance reconciliation feature to ensure that your internal wallet balances stay in sync with the actual on-chain balances.</p>
+    </div>
+  </div>
+</div>

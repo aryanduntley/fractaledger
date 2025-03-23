@@ -1,0 +1,147 @@
+<div class="api-section" id="chaincode-management">
+  <h2>Chaincode Management</h2>
+
+  <div class="endpoint">
+    <h3>List Available Chaincode Templates</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/chaincode/templates</span>
+    </div>
+    <p>Get a list of all available chaincode templates.</p>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "templates": [
+    {
+      "id": "default",
+      "name": "Default Template",
+      "description": "Basic functionality for managing internal wallets and transactions."
+    },
+    {
+      "id": "merchant-fee",
+      "name": "Merchant Fee Template",
+      "description": "Specialized functionality for merchant fee collection use cases."
+    },
+    {
+      "id": "employee-payroll",
+      "name": "Employee Payroll Template",
+      "description": "Specialized functionality for employee payment use cases."
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Create a Custom Chaincode</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/chaincode/custom</span>
+    </div>
+    <p>Create a custom chaincode based on a template.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "templateId": "merchant-fee",
+  "customId": "my-merchant-fee"
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "chaincode": {
+    "id": "my-merchant-fee",
+    "templateId": "merchant-fee",
+    "path": "/path/to/chaincode/custom/my-merchant-fee"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_009",
+      "message": "Custom chaincode created successfully",
+      "data": {
+        "id": "my-merchant-fee",
+        "templateId": "merchant-fee"
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Update a Custom Chaincode</h3>
+    <div class="endpoint-header">
+      <span class="method put">PUT</span>
+      <span class="path">/api/chaincode/custom/:id</span>
+    </div>
+    <p>Update a custom chaincode.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>id</code> - The custom chaincode ID</li>
+    </ul>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "filePath": "index.js",
+  "content": "// Updated chaincode content\nconst { Contract } = require('fabric-contract-api');\n\nclass MerchantFeeContract extends Contract {\n  // ...\n}"
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "chaincode": {
+    "id": "my-merchant-fee",
+    "path": "/path/to/chaincode/custom/my-merchant-fee",
+    "updatedFile": "index.js"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_010",
+      "message": "Custom chaincode updated successfully",
+      "data": {
+        "id": "my-merchant-fee",
+        "updatedFile": "index.js"
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Deploy a Custom Chaincode</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/chaincode/custom/:id/deploy</span>
+    </div>
+    <p>Deploy a custom chaincode to the Hyperledger Fabric network.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>id</code> - The custom chaincode ID</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "deployment": {
+    "id": "my-merchant-fee",
+    "status": "deployed",
+    "timestamp": "2025-03-13T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_011",
+      "message": "Custom chaincode deployed successfully",
+      "data": {
+        "id": "my-merchant-fee"
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+</div>

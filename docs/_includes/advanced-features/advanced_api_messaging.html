@@ -1,0 +1,86 @@
+<div class="content-section" id="api-messaging">
+  <h2>API Messaging System</h2>
+  <p>FractaLedger includes a structured messaging system for API responses that provides clear, consistent, and informative feedback to clients. This system categorizes messages by type and severity, making it easier to handle responses programmatically.</p>
+  
+  <h3>Message Types</h3>
+  <ul>
+    <li><strong>Info</strong>: Informational messages about successful operations</li>
+    <li><strong>Warning</strong>: Alerts about potential issues that didn't prevent the operation</li>
+    <li><strong>Error</strong>: Messages about failures that prevented the operation</li>
+  </ul>
+  
+  <h3>Response Format</h3>
+  <p>API responses include both the requested data and any relevant messages:</p>
+  
+  <div class="code-block">
+    <pre><code>{
+  "data": {
+    "success": true,
+    "transfer": {
+      "id": "transfer_123",
+      "fromWalletId": "internal_wallet_1",
+      "toWalletId": "internal_wallet_2",
+      "amount": 0.1,
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_001",
+      "message": "Internal transfer processed successfully",
+      "data": {
+        "fromWalletId": "internal_wallet_1",
+        "toWalletId": "internal_wallet_2",
+        "amount": 0.1
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    },
+    {
+      "type": "warning",
+      "code": "WARN_001",
+      "message": "Primary wallet balance is low",
+      "data": {
+        "blockchain": "bitcoin",
+        "primaryWalletName": "btc_wallet_1",
+        "primaryWalletBalance": 1.2,
+        "aggregateInternalBalance": 1.1
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+  
+  <h3>Message Codes</h3>
+  <p>Each message includes a unique code that can be used for programmatic handling:</p>
+  
+  <div class="message-codes">
+    <div class="message-code">
+      <span class="code">INFO_001</span>
+      <span class="description">Transaction processed successfully</span>
+    </div>
+    <div class="message-code">
+      <span class="code">INFO_002</span>
+      <span class="description">Wallet created successfully</span>
+    </div>
+    <div class="message-code">
+      <span class="code">WARN_001</span>
+      <span class="description">Primary wallet balance is low</span>
+    </div>
+    <div class="message-code">
+      <span class="code">WARN_002</span>
+      <span class="description">Balance discrepancy detected</span>
+    </div>
+    <div class="message-code">
+      <span class="code">ERROR_001</span>
+      <span class="description">Insufficient balance</span>
+    </div>
+    <div class="message-code">
+      <span class="code">ERROR_002</span>
+      <span class="description">Wallet not found</span>
+    </div>
+  </div>
+  
+  <p>This messaging system makes it easier to build robust client applications that can handle both successful operations and various error conditions in a consistent way.</p>
+</div>

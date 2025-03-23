@@ -1,0 +1,96 @@
+<div class="content-section" id="api-extensions">
+  <h2>API Extensions</h2>
+  <p>FractaLedger allows you to extend the API with custom endpoints that interact with your chaincode. This is done through API extensions, which are JavaScript modules that register new endpoints with the API server.</p>
+  
+  <h3>Creating an API Extension</h3>
+  <p>You can create an API extension using the <code>generate-api-extension</code> tool:</p>
+  
+  <div class="code-block">
+    <pre><code>npx fractaledger-generate-api-extension --name my-extension --output ./api-extensions</code></pre>
+  </div>
+  
+  <p>This generates a new API extension file in the <code>./api-extensions</code> directory.</p>
+  
+  <h3>Example API Extension</h3>
+  <p>Here's an example API extension that adds endpoints for managing a custom feature:</p>
+  
+  <div class="code-block">
+    <pre><code>/**
+ * My Custom API Extension
+ * 
+ * This extension adds endpoints for managing a custom feature.
+ */
+
+/**
+ * Register the custom extension with the API server
+ * @param {Object} app The Express app instance
+ * @param {Function} authenticateJWT The authentication middleware
+ * @param {Object} dependencies Additional dependencies (walletManager, fabricClient, etc.)
+ */
+function registerMyExtension(app, authenticateJWT, dependencies) {
+  const { walletManager, fabricClient } = dependencies;
+  
+  /**
+   * Create a custom feature
+   * POST /api/custom-feature
+   */
+  app.post('/api/custom-feature', authenticateJWT, async (req, res) => {
+    try {
+      const { name, config } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Submit the custom feature to the Fabric network
+      const result = await fabricClient.submitTransaction(
+        'createCustomFeature',
+        name,
+        JSON.stringify(config || {})
+      );
+      
+      const customFeature = JSON.parse(result.toString());
+      
+      res.json(customFeature);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  /**
+   * Get custom features
+   * GET /api/custom-features
+   */
+  app.get('/api/custom-features', authenticateJWT, async (req, res) => {
+    try {
+      // Get the custom features from the Fabric network
+      const result = await fabricClient.evaluateTransaction('getCustomFeatures');
+      const customFeatures = JSON.parse(result.toString());
+      
+      res.json(customFeatures);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
+
+module.exports = registerMyExtension;</code></pre>
+  </div>
+  
+  <h3>Registering an API Extension</h3>
+  <p>To register your API extension with the FractaLedger system, you need to add it to the <code>api.extensions</code> array in your <code>config.json</code> file:</p>
+  
+  <div class="code-block">
+    <pre><code>"api": {
+  "port": 3000,
+  "host": "localhost",
+  "extensions": [
+    {
+      "module": "./api-extensions/my-extension.js"
+    }
+  ]
+}</code></pre>
+  </div>
+  
+  <p>This registers your API extension with the FractaLedger API server, making your custom endpoints available for use.</p>
+</div>

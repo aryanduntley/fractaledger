@@ -1,0 +1,112 @@
+<div class="content-section" id="multiple-blockchains">
+  <h2>Multiple Blockchain Support</h2>
+  <p>FractaLedger is designed to support multiple UTXO-based blockchains simultaneously. You can create and configure transceivers for different blockchains like Bitcoin, Litecoin, and Dogecoin.</p>
+  
+  <h3>Setting Up Multiple Blockchain Transceivers</h3>
+  <p>Generate transceiver implementations for each blockchain type:</p>
+  
+  <div class="code-block">
+    <pre><code># Generate Bitcoin transceiver
+npx fractaledger-generate-transceiver --type bitcoin --output ./my-transceivers
+
+# Generate Litecoin transceiver
+npx fractaledger-generate-transceiver --type litecoin --output ./my-transceivers
+
+# Generate Dogecoin transceiver
+npx fractaledger-generate-transceiver --type dogecoin --output ./my-transceivers</code></pre>
+  </div>
+  
+  <p>This will create three separate transceiver files:</p>
+  <ul>
+    <li><code>./my-transceivers/bitcoin-transceiver.js</code></li>
+    <li><code>./my-transceivers/litecoin-transceiver.js</code></li>
+    <li><code>./my-transceivers/dogecoin-transceiver.js</code></li>
+  </ul>
+  
+  <h3>Customizing Each Transceiver</h3>
+  <p>Each generated file will be pre-configured with blockchain-specific settings:</p>
+  <ul>
+    <li>Bitcoin transceiver will use <code>https://blockstream.info/api</code> as the default API URL</li>
+    <li>Litecoin transceiver will use <code>https://ltc.bitaps.com/api/v1/blockchain</code></li>
+    <li>Dogecoin transceiver will use <code>https://dogechain.info/api/v1</code></li>
+  </ul>
+  
+  <p>You'll need to customize each transceiver file to implement the specific logic needed for that blockchain, addressing differences in:</p>
+  <ul>
+    <li>API endpoints and formats</li>
+    <li>Transaction structure and serialization</li>
+    <li>Address formats and validation</li>
+    <li>Fee calculation</li>
+    <li>Network-specific features</li>
+  </ul>
+  
+  <h3>Configuration for Multiple Blockchains</h3>
+  <p>In your <code>fractaledger.json</code> configuration file, reference each transceiver in the appropriate blockchain section:</p>
+  
+  <div class="code-block">
+    <pre><code>{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./my-transceivers/bitcoin-transceiver.js",
+        "config": {
+          "apiUrl": "https://blockstream.info/api",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
+      }
+    }
+  ],
+  "litecoin": [
+    {
+      "name": "ltc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "ltc1q...",
+      "secretEnvVar": "LTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./my-transceivers/litecoin-transceiver.js",
+        "config": {
+          "apiUrl": "https://ltc.bitaps.com/api/v1/blockchain",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
+      }
+    }
+  ],
+  "dogecoin": [
+    {
+      "name": "doge_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "D...",
+      "secretEnvVar": "DOGE_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./my-transceivers/dogecoin-transceiver.js",
+        "config": {
+          "apiUrl": "https://dogechain.info/api/v1",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
+      }
+    }
+  ]
+}</code></pre>
+  </div>
+  
+  <h3>How It Works Internally</h3>
+  <p>When FractaLedger starts up, it:</p>
+  <ol>
+    <li>Reads the configuration file</li>
+    <li>For each blockchain section (bitcoin, litecoin, dogecoin), it loads the specified wallets</li>
+    <li>For each wallet, it initializes the appropriate transceiver based on the configuration</li>
+    <li>The transceiver manager maintains separate instances for each blockchain and wallet</li>
+  </ol>
+  
+  <p>This architecture allows FractaLedger to interact with multiple blockchains simultaneously, each with its own set of wallets and transceivers.</p>
+</div>

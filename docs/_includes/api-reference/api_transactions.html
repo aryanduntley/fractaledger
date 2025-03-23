@@ -1,0 +1,189 @@
+<div class="api-section" id="transactions">
+  <h2>Transactions</h2>
+
+  <div class="endpoint">
+    <h3>Internal Transfer</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/transactions/internal-transfer</span>
+    </div>
+    <p>Transfer funds between internal wallets that are mapped to the same primary on-chain wallet.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "fromInternalWalletId": "internal_wallet_1",
+  "toInternalWalletId": "internal_wallet_2",
+  "amount": 0.1,
+  "memo": "Payment for services"
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "transfer": {
+    "id": "transfer_123",
+    "fromWalletId": "internal_wallet_1",
+    "toWalletId": "internal_wallet_2",
+    "amount": 0.1,
+    "memo": "Payment for services",
+    "timestamp": "2025-03-13T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_001",
+      "message": "Internal transfer processed successfully",
+      "data": {
+        "fromWalletId": "internal_wallet_1",
+        "toWalletId": "internal_wallet_2",
+        "amount": 0.1
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>List All Transactions</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/transactions</span>
+    </div>
+    <p>Get a list of all transactions.</p>
+
+    <h4>Query Parameters</h4>
+    <ul>
+      <li><code>page</code> - Page number (default: 1)</li>
+      <li><code>limit</code> - Number of transactions per page (default: 10)</li>
+      <li><code>type</code> - Transaction type (internal, withdrawal, deposit)</li>
+      <li><code>walletId</code> - Filter by wallet ID</li>
+      <li><code>startDate</code> - Filter by start date (ISO format)</li>
+      <li><code>endDate</code> - Filter by end date (ISO format)</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "transactions": [
+    {
+      "id": "transfer_123",
+      "type": "internal",
+      "fromWalletId": "internal_wallet_1",
+      "toWalletId": "internal_wallet_2",
+      "amount": 0.1,
+      "memo": "Payment for services",
+      "timestamp": "2025-03-13T12:00:00Z"
+    },
+    {
+      "id": "withdrawal_123",
+      "type": "withdrawal",
+      "internalWalletId": "internal_wallet_1",
+      "toAddress": "bc1q...",
+      "amount": 0.1,
+      "fee": 0.0001,
+      "txid": "abcdef1234567890...",
+      "status": "broadcasted",
+      "timestamp": "2025-03-13T11:30:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "totalItems": 2,
+    "totalPages": 1
+  }
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Get Pending Transactions</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/transactions/pending</span>
+    </div>
+    <p>Retrieves a list of transactions that are ready to be broadcast to the blockchain network. These transactions have been created and signed but not yet broadcast.</p>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "pendingTransactions": [
+    {
+      "txid": "0x1234567890abcdef",
+      "txHex": "0100000001abcdef...",
+      "blockchain": "bitcoin",
+      "primaryWalletName": "btc_wallet_1",
+      "status": "ready",
+      "timestamp": "2025-03-12T12:00:00Z",
+      "metadata": {
+        "internalWalletId": "internal_wallet_1",
+        "toAddress": "bc1q...",
+        "amount": 0.1,
+        "fee": 0.0001
+      }
+    }
+  ]
+}</code></pre>
+    <p><strong>Note</strong>: The <code>txHex</code> field contains the raw transaction in hexadecimal format, which is ready to be broadcast to the blockchain network. This transaction has been fully created and signed by the system.</p>
+  </div>
+
+  <div class="endpoint">
+    <h3>Submit Transaction Results</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/transactions/results</span>
+    </div>
+    <p>Submits the results of a transaction broadcast that was performed externally. This endpoint is used to update the system with the status of a transaction after it has been broadcast to the blockchain network.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "txid": "0x1234567890abcdef",
+  "success": true,
+  "blockHeight": 700000,
+  "confirmations": 1,
+  "error": null
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "transaction": {
+    "txid": "0x1234567890abcdef",
+    "status": "confirmed",
+    "blockHeight": 700000,
+    "confirmations": 1,
+    "timestamp": "2025-03-12T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_006",
+      "message": "Transaction results recorded successfully",
+      "data": {
+        "txid": "0x1234567890abcdef",
+        "status": "confirmed"
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Transaction Broadcasting Flow</h3>
+    <p>FractaLedger uses a transceiver architecture that separates transaction creation/signing from the actual blockchain interaction. The complete transaction flow is as follows:</p>
+    
+    <ol>
+      <li><strong>Transaction Creation</strong>: When you use endpoints like <code>/api/transactions/withdraw</code>, the system creates a transaction with the specified parameters, signs it with the wallet's private key, generates the raw transaction hex, assigns a transaction ID, and stores this information in the pending transactions map.</li>
+      <li><strong>Transaction Retrieval</strong>: Your application retrieves pending transactions via <code>GET /api/transactions/pending</code>.</li>
+      <li><strong>External Broadcasting</strong>: Your application is responsible for broadcasting these transactions to the blockchain network using your own infrastructure or third-party services.</li>
+      <li><strong>Result Submission</strong>: After broadcasting, your application reports the results back to FractaLedger via <code>POST /api/transactions/results</code>.</li>
+    </ol>
+    
+    <p>This architecture provides several benefits:</p>
+    <ul>
+      <li><strong>Flexibility</strong>: You can implement your own broadcasting logic.</li>
+      <li><strong>Security</strong>: Sensitive operations like broadcasting can be handled in a controlled environment.</li>
+      <li><strong>Customization</strong>: Different broadcasting methods can be used for different scenarios.</li>
+      <li><strong>Separation of Concerns</strong>: Transaction creation is separate from blockchain interaction.</li>
+    </ul>
+  </div>
+</div>

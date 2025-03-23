@@ -1,0 +1,50 @@
+<div class="content-section" id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <p>Here are some common issues you might encounter and how to resolve them:</p>
+  
+  <div class="troubleshooting-item">
+    <h3>Configuration Issues</h3>
+    <p><strong>Symptom:</strong> Error messages like "Invalid configuration" or "Missing required configuration".</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+      <li>Check your <code>fractaledger.json</code> file for syntax errors.</li>
+      <li>Ensure all required fields are present in your configuration.</li>
+      <li>Verify that your <code>.env</code> file contains all the required environment variables.</li>
+    </ul>
+  </div>
+  
+  <div class="troubleshooting-item">
+    <h3>Transceiver Issues</h3>
+    <p><strong>Symptom:</strong> Error messages like "Failed to broadcast transaction" or "Failed to monitor wallet address".</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+      <li>Check your transceiver configuration in <code>fractaledger.json</code>.</li>
+      <li>Ensure the API URL is correct and accessible.</li>
+      <li>Verify that your wallet address and private key are correct.</li>
+      <li>Check the blockchain network status (mainnet/testnet).</li>
+    </ul>
+  </div>
+  
+  <div class="troubleshooting-item">
+    <h3>API Authentication Issues</h3>
+    <p><strong>Symptom:</strong> 401 Unauthorized errors when accessing API endpoints.</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+      <li>Ensure you're including the JWT token in the Authorization header.</li>
+      <li>Check that the JWT token is valid and not expired.</li>
+      <li>Verify that the JWT secret in <code>.env</code> matches the one used to generate the token.</li>
+    </ul>
+  </div>
+  
+  <div class="troubleshooting-item">
+    <h3>Balance Reconciliation Issues</h3>
+    <p><strong>Symptom:</strong> Error messages like "Balance discrepancy detected" or "Failed to reconcile wallet balances".</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+      <li>Check the on-chain balance of your primary wallet.</li>
+      <li>Verify that the sum of internal wallet balances doesn't exceed the primary wallet balance.</li>
+      <li>Check for pending transactions that might affect the balance.</li>
+      <li>Adjust the <code>warningThreshold</code> in the reconciliation configuration if needed.</li>
+    </ul>
+  </div>
+</div>

@@ -1,0 +1,65 @@
+<div class="content-section" id="wallet-specific-logic">
+  <h2>Wallet-Specific Business Logic</h2>
+  <p>FractaLedger uses a specific architecture to handle wallet-specific business logic. Understanding this architecture is important for implementing custom business rules for different wallets.</p>
+  
+  <h3>Chaincode and Wallet Relationship</h3>
+  <p>FractaLedger uses a single Hyperledger Fabric network with one deployed chaincode that handles all the business logic for the entire system. This chaincode is not directly linked to specific wallets on a one-to-one basis. Instead:</p>
+  
+  <ul>
+    <li>The chaincode contains the logic for all operations (transfers, fee calculations, etc.)</li>
+    <li>When operations are performed, the specific wallets involved are passed as parameters to the chaincode functions</li>
+  </ul>
+  
+  <p>This means you don't need to deploy separate chaincodes for each wallet. Rather, you customize a single chaincode that handles all your business logic, and that chaincode processes transactions for all wallets in the system.</p>
+  
+  <h3>API Extensions for Wallet-Specific Logic</h3>
+  <p>To implement wallet-specific business logic, FractaLedger uses API Extensions. These extensions:</p>
+  
+  <ul>
+    <li>Add custom API endpoints to the system</li>
+    <li>Implement business logic that can be specific to certain wallets or wallet types</li>
+    <li>Call the appropriate chaincode functions with the right parameters</li>
+  </ul>
+  
+  <p>For example, in the merchant-fee-extension.js, you can see endpoints like:</p>
+  
+  <ul>
+    <li><code>/api/fee-config</code> - For setting up fee configurations</li>
+    <li><code>/api/internal-wallets/:id/fund</code> - For funding specific internal wallets</li>
+    <li><code>/api/transactions/merchant</code> - For processing merchant transactions with specific wallets</li>
+  </ul>
+  
+  <h3>Implementing Wallet-Specific Logic</h3>
+  <p>To implement wallet-specific logic, you have two main options:</p>
+  
+  <h4>Option 1: Single Chaincode with Comprehensive Logic</h4>
+  <p>Create a custom chaincode that includes logic for different wallet types, with functions that determine which logic to apply based on wallet metadata or transaction parameters.</p>
+  
+  <div class="code-block">
+    <pre><code>// Example of a comprehensive chaincode function
+async function processTransaction(ctx, fromWalletId, toWalletId, amount, transactionType) {
+  if (transactionType === 'merchant') {
+    // Apply merchant fee logic
+    // ...
+  } else if (transactionType === 'payroll') {
+    // Apply payroll logic
+    // ...
+  }
+  // ...
+}</code></pre>
+  </div>
+  
+  <h4>Option 2: Multiple Instances</h4>
+  <p>Run separate FractaLedger instances, each with its own configuration, Hyperledger Fabric network, and deployed chaincode. This approach provides complete separation between different business domains but is more complex to manage.</p>
+  
+  <h3>Recommendation</h3>
+  <p>For most use cases, Option 1 (single instance with comprehensive chaincode) is recommended because:</p>
+  <ul>
+    <li>It's simpler to manage</li>
+    <li>It allows internal transfers between all wallets</li>
+    <li>It provides a unified view of all transactions</li>
+    <li>It's more resource-efficient</li>
+  </ul>
+  
+  <p>Only use Option 2 if you have strict separation requirements or vastly different business domains that cannot coexist in the same chaincode.</p>
+</div>

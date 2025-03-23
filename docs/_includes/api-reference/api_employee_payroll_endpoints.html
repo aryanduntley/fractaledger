@@ -1,0 +1,80 @@
+<div class="api-section" id="employee-payroll-endpoints">
+  <h2>Employee Payroll Endpoints</h2>
+  <p>These endpoints are available when using the employee payroll extension.</p>
+
+  <div class="endpoint">
+    <h3>Register Employee</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/employees</span>
+    </div>
+    <p>Register a new employee with the payroll system.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "employeeId": "emp_123",
+  "name": "John Doe",
+  "internalWalletId": "internal_wallet_emp_123",
+  "salary": 0.5,
+  "paymentFrequency": "monthly",
+  "metadata": {
+    "department": "Engineering",
+    "position": "Software Developer"
+  }
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "employee": {
+    "employeeId": "emp_123",
+    "name": "John Doe",
+    "internalWalletId": "internal_wallet_emp_123",
+    "salary": 0.5,
+    "paymentFrequency": "monthly",
+    "metadata": {
+      "department": "Engineering",
+      "position": "Software Developer"
+    },
+    "createdAt": "2025-03-13T12:00:00Z"
+  }
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Process Payroll</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/payroll/process</span>
+    </div>
+    <p>Process payroll for all registered employees or a specific employee.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "employeeId": "emp_123",  // Optional, if not provided, process for all employees
+  "payrollDate": "2025-03-31",
+  "memo": "March 2025 Salary"
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "payroll": {
+    "id": "payroll_123",
+    "date": "2025-03-31",
+    "totalAmount": 0.5,
+    "employeeCount": 1,
+    "transactions": [
+      {
+        "employeeId": "emp_123",
+        "name": "John Doe",
+        "internalWalletId": "internal_wallet_emp_123",
+        "amount": 0.5,
+        "memo": "March 2025 Salary",
+        "timestamp": "2025-03-13T12:00:00Z"
+      }
+    ]
+  }
+}</code></pre>
+  </div>
+</div>

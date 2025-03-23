@@ -1,0 +1,80 @@
+<div class="content-section" id="base-wallet-protection">
+  <h2>Base Wallet Protection</h2>
+  <p>Base wallet protection ensures that the primary on-chain wallet always has sufficient funds to cover all internal wallets. This is achieved through:</p>
+  
+  <ol>
+    <li><strong>Base Internal Wallet</strong>: A special internal wallet that represents excess funds in the primary wallet</li>
+    <li><strong>Read-Only Wallet Access</strong>: API endpoint that provides aggregate balance information</li>
+    <li><strong>Enhanced Withdrawal Validation</strong>: Checks to prevent withdrawals that would exceed the aggregate internal distributed amount</li>
+  </ol>
+  
+  <div class="feature-diagram">
+    <img src="{{ '/assets/images/base-wallet-protection.png' | relative_url }}" alt="Base Wallet Protection Diagram" onerror="this.style.display='none'">
+    <div class="diagram-fallback">
+      <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      Primary Wallet                          │
+│                      Balance: 1.5 BTC                        │
+│                                                             │
+│  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
+│  │ Internal      │    │ Internal      │    │ Base Internal│ │
+│  │ Wallet A      │    │ Wallet B      │    │ Wallet       │ │
+│  │ Balance: 0.5  │    │ Balance: 0.7  │    │ Balance: 0.3 │ │
+│  └───────────────┘    └───────────────┘    └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+  </div>
+  
+  <h3>Base Internal Wallet</h3>
+  <p>The base internal wallet is a special internal wallet that represents excess funds in the primary on-chain wallet. It follows this naming convention:</p>
+  
+  <div class="code-block">
+    <pre><code>{namePrefix}{blockchain}_{primaryWalletName}</code></pre>
+  </div>
+  
+  <p>For example, for a Bitcoin primary wallet named "btc_wallet_1", the base internal wallet would be named:</p>
+  
+  <div class="code-block">
+    <pre><code>base_wallet_bitcoin_btc_wallet_1</code></pre>
+  </div>
+  
+  <h3>Configuration</h3>
+  <p>To enable base internal wallet creation, add the following to your configuration file:</p>
+  
+  <div class="code-block">
+    <pre><code>"baseInternalWallet": {
+  "namePrefix": "base_wallet_",
+  "description": "Represents excess funds in the primary on-chain wallet",
+  "createOnInitialization": true
+}</code></pre>
+  </div>
+  
+  <h3>Read-Only Wallet Access</h3>
+  <p>You can get information about a primary wallet, including the aggregate balance of all internal wallets, using the <code>GET /api/wallets/:blockchain/:name/read-only</code> endpoint:</p>
+  
+  <div class="code-block">
+    <pre><code>curl -X GET http://localhost:3000/api/wallets/bitcoin/btc_wallet_1/read-only \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</code></pre>
+  </div>
+  
+  <p>Response:</p>
+  
+  <div class="code-block">
+    <pre><code>{
+  "blockchain": "bitcoin",
+  "name": "btc_wallet_1",
+  "address": "bc1q...",
+  "balance": 1.5,
+  "aggregateInternalBalance": 1.2,
+  "excessBalance": 0.3,
+  "baseInternalWalletId": "base_wallet_bitcoin_btc_wallet_1"
+}</code></pre>
+  </div>
+  
+  <h3>Enhanced Withdrawal Validation</h3>
+  <p>When you attempt to withdraw funds from an internal wallet, FractaLedger checks that the withdrawal amount doesn't exceed the available balance in the primary wallet. This prevents situations where multiple internal wallets try to withdraw more funds than are actually available in the primary wallet.</p>
+  
+  <p>If a withdrawal would cause the aggregate internal balance to exceed the primary wallet balance, the withdrawal is rejected with an error message.</p>
+</div>

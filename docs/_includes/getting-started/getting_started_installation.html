@@ -1,0 +1,119 @@
+<div class="content-section" id="installation">
+  <h2>Installation</h2>
+  
+  <div class="installation-tabs">
+    <div class="tab-headers">
+      <button class="tab-header active" data-tab="dependency">As a Dependency</button>
+      <button class="tab-header" data-tab="source">From Source</button>
+    </div>
+    
+    <div class="tab-content active" id="dependency-tab">
+      <h3>Installing as a Dependency in Your Project</h3>
+      <p>You can install FractaLedger as a dependency in your existing Node.js project:</p>
+      
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h4>Install FractaLedger</h4>
+          <div class="code-block">
+            <pre><code>npm install fractaledger</code></pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h4>Initialize a New FractaLedger Project</h4>
+          <div class="code-block">
+            <pre><code>npx fractaledger-init --dir my-fractaledger-project</code></pre>
+          </div>
+          <p>This command creates a new FractaLedger project with the necessary directory structure and configuration files.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h4>Navigate to Your Project Directory</h4>
+          <div class="code-block">
+            <pre><code>cd my-fractaledger-project</code></pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h4>Edit Configuration Files</h4>
+          <p>Update <code>fractaledger.json</code> with your blockchain connection details and add your wallet secrets to <code>.env</code> (keep this file secure and never commit it to version control).</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">5</div>
+        <div class="step-content">
+          <h4>Start the System</h4>
+          <div class="code-block">
+            <pre><code>npm start</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="source-tab">
+      <h3>Installing from Source</h3>
+      <p>You can also install FractaLedger directly from the source code:</p>
+      
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h4>Clone the Repository</h4>
+          <div class="code-block">
+            <pre><code>git clone https://github.com/aryanduntley/fractaledger.git
+cd fractaledger</code></pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h4>Install Dependencies</h4>
+          <div class="code-block">
+            <pre><code>npm install</code></pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h4>Copy Configuration Templates</h4>
+          <div class="code-block">
+            <pre><code>cp fractaledger-template.json fractaledger.json
+cp .env.example .env</code></pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h4>Edit Configuration Files</h4>
+          <p>Update <code>fractaledger.json</code> with your blockchain connection details and add your wallet secrets to <code>.env</code> (keep this file secure and never commit it to version control).</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">5</div>
+        <div class="step-content">
+          <h4>Start the System</h4>
+          <div class="code-block">
+            <pre><code>npm start</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,116 @@
+<div class="content-section" id="customizing">
+  <h2>Customizing Chaincode</h2>
+  <p>You can customize the chaincode to implement your specific business requirements. FractaLedger provides two main ways to customize chaincode:</p>
+  
+  <div class="customization-tabs">
+    <div class="tab-headers">
+      <button class="tab-header active" data-tab="api">Using the API</button>
+      <button class="tab-header" data-tab="file">Direct File Editing</button>
+    </div>
+    
+    <div class="tab-content active" id="api-tab">
+      <h3>Using the API</h3>
+      <p>You can create, update, and deploy custom chaincodes using the API endpoints. This approach is useful for applications that need to manage chaincode programmatically.</p>
+      
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h4>Create a Custom Chaincode</h4>
+          <p>Use the <code>POST /api/chaincode/custom</code> endpoint to create a custom chaincode based on a template:</p>
+          <div class="code-block">
+            <pre><code>curl -X POST http://localhost:3000/api/chaincode/custom \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "templateId": "merchant-fee",
+    "customId": "my-merchant-fee"
+  }'</code></pre>
+          </div>
+          <p>This creates a new custom chaincode in the <code>src/chaincode/custom/my-merchant-fee</code> directory, based on the merchant fee template.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h4>Update the Custom Chaincode</h4>
+          <p>Use the <code>PUT /api/chaincode/custom/:id</code> endpoint to update the custom chaincode:</p>
+          <div class="code-block">
+            <pre><code>curl -X PUT http://localhost:3000/api/chaincode/custom/my-merchant-fee \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "filePath": "index.js",
+    "content": "// Updated chaincode content\nconst { Contract } = require(\"fabric-contract-api\");\n\nclass MerchantFeeContract extends Contract {\n  // ...\n}"
+  }'</code></pre>
+          </div>
+          <p>This updates the <code>index.js</code> file in the custom chaincode directory with the new content.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h4>Deploy the Custom Chaincode</h4>
+          <p>Use the <code>POST /api/chaincode/custom/:id/deploy</code> endpoint to deploy the custom chaincode to the Hyperledger Fabric network:</p>
+          <div class="code-block">
+            <pre><code>curl -X POST http://localhost:3000/api/chaincode/custom/my-merchant-fee/deploy \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</code></pre>
+          </div>
+          <p>This deploys the custom chaincode to the Hyperledger Fabric network, making it available for use by the FractaLedger system.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="file-tab">
+      <h3>Direct File Editing</h3>
+      <p>You can directly edit the chaincode files in the <code>src/chaincode/custom</code> directory. This approach is useful for development and testing.</p>
+      
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h4>Create a Custom Chaincode Directory</h4>
+          <p>Create a new directory in the <code>src/chaincode/custom</code> directory for your custom chaincode:</p>
+          <div class="code-block">
+            <pre><code>mkdir -p src/chaincode/custom/my-merchant-fee</code></pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h4>Copy Template Files</h4>
+          <p>Copy the files from the template directory to your custom chaincode directory:</p>
+          <div class="code-block">
+            <pre><code>cp -r src/chaincode/templates/merchant-fee/* src/chaincode/custom/my-merchant-fee/</code></pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h4>Edit the Chaincode Files</h4>
+          <p>Edit the files in your custom chaincode directory to implement your specific business logic:</p>
+          <div class="code-block">
+            <pre><code>vim src/chaincode/custom/my-merchant-fee/index.js</code></pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h4>Deploy the Custom Chaincode</h4>
+          <p>Use the Hyperledger Fabric CLI tools to deploy your custom chaincode to the Fabric network:</p>
+          <div class="code-block">
+            <pre><code>cd fabric-samples/test-network
+./network.sh deployCC -ccn fractaledger-chaincode -ccp /path/to/src/chaincode/custom/my-merchant-fee -ccl javascript</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,132 @@
+<div class="content-section" id="multi-blockchain">
+  <h2>Multi-Blockchain Support</h2>
+  <p>FractaLedger supports multiple UTXO-based blockchains simultaneously, allowing you to manage wallets across different blockchains from a single system.</p>
+  
+  <h3>Supported Blockchains</h3>
+  <p>FractaLedger supports the following UTXO-based blockchains:</p>
+  
+  <div class="blockchain-list">
+    <div class="blockchain-item">
+      <div class="blockchain-icon">
+        <i class="fab fa-bitcoin"></i>
+      </div>
+      <div class="blockchain-content">
+        <h4>Bitcoin</h4>
+        <p>The original and most widely used cryptocurrency.</p>
+      </div>
+    </div>
+    
+    <div class="blockchain-item">
+      <div class="blockchain-icon">
+        <i class="fab fa-litecoin"></i>
+      </div>
+      <div class="blockchain-content">
+        <h4>Litecoin</h4>
+        <p>A cryptocurrency that was created as a fork of Bitcoin, with faster block generation time and a different hashing algorithm.</p>
+      </div>
+    </div>
+    
+    <div class="blockchain-item">
+      <div class="blockchain-icon">
+        <i class="fab fa-dogecoin"></i>
+      </div>
+      <div class="blockchain-content">
+        <h4>Dogecoin</h4>
+        <p>A cryptocurrency featuring a Shiba Inu dog from the "Doge" Internet meme as its logo.</p>
+      </div>
+    </div>
+    
+    <div class="blockchain-item">
+      <div class="blockchain-icon">
+        <i class="fas fa-coins"></i>
+      </div>
+      <div class="blockchain-content">
+        <h4>Other UTXO-Based Blockchains</h4>
+        <p>FractaLedger can be extended to support other UTXO-based blockchains by implementing custom transceivers.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h3>Configuration</h3>
+  <p>You can configure multiple blockchains in your <code>config.json</code> file:</p>
+  
+  <div class="code-block">
+    <pre><code>{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./transceivers/bitcoin-transceiver.js",
+        "config": {
+          "apiUrl": "https://blockstream.info/api",
+          "monitoringInterval": 60000
+        }
+      }
+    }
+  ],
+  "litecoin": [
+    {
+      "name": "ltc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "ltc1q...",
+      "secretEnvVar": "LTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./transceivers/litecoin-transceiver.js",
+        "config": {
+          "apiUrl": "https://ltc.bitaps.com/api/v1/blockchain",
+          "monitoringInterval": 60000
+        }
+      }
+    }
+  ],
+  "dogecoin": [
+    {
+      "name": "doge_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "D...",
+      "secretEnvVar": "DOGE_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./transceivers/dogecoin-transceiver.js",
+        "config": {
+          "apiUrl": "https://dogechain.info/api/v1",
+          "monitoringInterval": 60000
+        }
+      }
+    }
+  ]
+}</code></pre>
+  </div>
+  
+  <h3>Transaction Broadcasting Flow</h3>
+  <p>FractaLedger uses a transceiver architecture that separates transaction creation/signing from the actual blockchain interaction. This allows you to handle blockchain operations through your preferred method. The complete transaction flow is as follows:</p>
+  
+  <ol>
+    <li><strong>Transaction Creation</strong>: When you use endpoints like <code>/api/transactions/withdraw</code>, the system creates a transaction with the specified parameters, signs it with the wallet's private key, generates the raw transaction hex, assigns a transaction ID, and stores this information in the pending transactions map.</li>
+    <li><strong>Transaction Retrieval</strong>: Your application retrieves pending transactions via <code>GET /api/transactions/pending</code>.</li>
+    <li><strong>External Broadcasting</strong>: Your application is responsible for broadcasting these transactions to the blockchain network using your own infrastructure or third-party services.</li>
+    <li><strong>Result Submission</strong>: After broadcasting, your application reports the results back to FractaLedger via <code>POST /api/transactions/results</code>.</li>
+  </ol>
+  
+  <p>This architecture provides several benefits:</p>
+  <ul>
+    <li><strong>Flexibility</strong>: You can implement your own broadcasting logic.</li>
+    <li><strong>Security</strong>: Sensitive operations like broadcasting can be handled in a controlled environment.</li>
+    <li><strong>Customization</strong>: Different broadcasting methods can be used for different scenarios.</li>
+    <li><strong>Separation of Concerns</strong>: Transaction creation is separate from blockchain interaction.</li>
+  </ul>
+  
+  <h3>Custom Transceivers</h3>
+  <p>To support a specific blockchain, you need to implement a custom transceiver for that blockchain. FractaLedger provides a command-line tool for generating transceiver templates:</p>
+  
+  <div class="code-block">
+    <pre><code>npx fractaledger-generate-transceiver --type bitcoin --output ./my-transceivers</code></pre>
+  </div>
+  
+  <p>This generates a custom transceiver implementation for Bitcoin in the <code>./my-transceivers</code> directory. You can then customize this transceiver to work with your specific blockchain.</p>
+</div>

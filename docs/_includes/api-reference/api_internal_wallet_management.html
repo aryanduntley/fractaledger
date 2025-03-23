@@ -1,0 +1,239 @@
+<div class="api-section" id="internal-wallet-management">
+  <h2>Internal Wallet Management</h2>
+
+  <div class="endpoint">
+    <h3>Create a New Internal Wallet</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/internal-wallets</span>
+    </div>
+    <p>Create a new internal wallet mapped to a primary wallet.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "id": "internal_wallet_1",
+  "blockchain": "bitcoin",
+  "primaryWalletName": "btc_wallet_1",
+  "description": "Customer wallet for user123",
+  "metadata": {
+    "userId": "user123",
+    "customerType": "premium"
+  }
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "internalWallet": {
+    "id": "internal_wallet_1",
+    "blockchain": "bitcoin",
+    "primaryWalletName": "btc_wallet_1",
+    "description": "Customer wallet for user123",
+    "balance": 0,
+    "metadata": {
+      "userId": "user123",
+      "customerType": "premium"
+    },
+    "createdAt": "2025-03-13T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_003",
+      "message": "Internal wallet created successfully",
+      "data": {
+        "id": "internal_wallet_1",
+        "blockchain": "bitcoin",
+        "primaryWalletName": "btc_wallet_1"
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>List All Internal Wallets</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/internal-wallets</span>
+    </div>
+    <p>Get a list of all internal wallets.</p>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "internalWallets": [
+    {
+      "id": "internal_wallet_1",
+      "blockchain": "bitcoin",
+      "primaryWalletName": "btc_wallet_1",
+      "description": "Customer wallet for user123",
+      "balance": 0.5,
+      "metadata": {
+        "userId": "user123",
+        "customerType": "premium"
+      },
+      "createdAt": "2025-03-13T12:00:00Z"
+    },
+    {
+      "id": "internal_wallet_2",
+      "blockchain": "bitcoin",
+      "primaryWalletName": "btc_wallet_1",
+      "description": "Customer wallet for user456",
+      "balance": 0.3,
+      "metadata": {
+        "userId": "user456",
+        "customerType": "standard"
+      },
+      "createdAt": "2025-03-13T12:30:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Get Internal Wallet Details</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/internal-wallets/:id</span>
+    </div>
+    <p>Get details for a specific internal wallet.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>id</code> - The internal wallet ID</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "internalWallet": {
+    "id": "internal_wallet_1",
+    "blockchain": "bitcoin",
+    "primaryWalletName": "btc_wallet_1",
+    "description": "Customer wallet for user123",
+    "balance": 0.5,
+    "metadata": {
+      "userId": "user123",
+      "customerType": "premium"
+    },
+    "createdAt": "2025-03-13T12:00:00Z"
+  }
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Get Internal Wallet Balance</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/internal-wallets/:id/balance</span>
+    </div>
+    <p>Get the balance of a specific internal wallet.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>id</code> - The internal wallet ID</li>
+    </ul>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "id": "internal_wallet_1",
+  "balance": 0.5,
+  "blockchain": "bitcoin",
+  "primaryWalletName": "btc_wallet_1"
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Fund an Internal Wallet</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/internal-wallets/:id/fund</span>
+    </div>
+    <p>Fund an internal wallet (simulate deposit).</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>id</code> - The internal wallet ID</li>
+    </ul>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "amount": 0.1
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "internalWallet": {
+    "id": "internal_wallet_1",
+    "blockchain": "bitcoin",
+    "primaryWalletName": "btc_wallet_1",
+    "balance": 0.6,
+    "previousBalance": 0.5
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_004",
+      "message": "Internal wallet funded successfully",
+      "data": {
+        "id": "internal_wallet_1",
+        "amount": 0.1,
+        "newBalance": 0.6
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Withdraw from an Internal Wallet</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/internal-wallets/:id/withdraw</span>
+    </div>
+    <p>Withdraw funds from an internal wallet to an external address.</p>
+
+    <h4>Parameters</h4>
+    <ul>
+      <li><code>id</code> - The internal wallet ID</li>
+    </ul>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "toAddress": "bc1q...",
+  "amount": 0.1,
+  "fee": 0.0001
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "withdrawal": {
+    "id": "withdrawal_123",
+    "internalWalletId": "internal_wallet_1",
+    "toAddress": "bc1q...",
+    "amount": 0.1,
+    "fee": 0.0001,
+    "txid": "abcdef1234567890...",
+    "status": "broadcasted",
+    "timestamp": "2025-03-13T12:00:00Z"
+  },
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_005",
+      "message": "Withdrawal processed successfully",
+      "data": {
+        "id": "withdrawal_123",
+        "internalWalletId": "internal_wallet_1",
+        "amount": 0.1,
+        "txid": "abcdef1234567890..."
+      },
+      "timestamp": "2025-03-13T12:00:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
+</div>

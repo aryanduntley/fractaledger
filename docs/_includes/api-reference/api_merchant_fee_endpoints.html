@@ -1,0 +1,74 @@
+<div class="api-section" id="merchant-fee-endpoints">
+  <h2>Merchant Fee Endpoints</h2>
+  <p>These endpoints are available when using the merchant fee extension.</p>
+
+  <div class="endpoint">
+    <h3>Configure Fee Structure</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/fee-config</span>
+    </div>
+    <p>Configure the fee structure for merchant transactions.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "merchantWalletId": "internal_wallet_merchant",
+  "feePercentage": 2.5,
+  "minFee": 0.0001,
+  "maxFee": 0.01,
+  "feeCollectionWalletId": "internal_wallet_fees"
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "feeConfig": {
+    "merchantWalletId": "internal_wallet_merchant",
+    "feePercentage": 2.5,
+    "minFee": 0.0001,
+    "maxFee": 0.01,
+    "feeCollectionWalletId": "internal_wallet_fees"
+  }
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <h3>Process Merchant Transaction</h3>
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="path">/api/transactions/merchant</span>
+    </div>
+    <p>Process a merchant transaction with automatic fee calculation and distribution.</p>
+
+    <h4>Request Body</h4>
+    <pre><code>{
+  "customerWalletId": "internal_wallet_customer",
+  "merchantWalletId": "internal_wallet_merchant",
+  "amount": 0.5,
+  "memo": "Payment for services",
+  "metadata": {
+    "orderId": "order_123",
+    "productId": "product_456"
+  }
+}</code></pre>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "success": true,
+  "transaction": {
+    "id": "tx_123",
+    "customerWalletId": "internal_wallet_customer",
+    "merchantWalletId": "internal_wallet_merchant",
+    "amount": 0.5,
+    "fee": 0.0125,
+    "netAmount": 0.4875,
+    "memo": "Payment for services",
+    "metadata": {
+      "orderId": "order_123",
+      "productId": "product_456"
+    },
+    "timestamp": "2025-03-13T12:00:00Z"
+  }
+}</code></pre>
+  </div>
+</div>
