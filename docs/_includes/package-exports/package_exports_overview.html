@@ -1,0 +1,40 @@
+<div class="section-content">
+  <h2>Package Exports Overview</h2>
+  
+  <p>
+    FractaLedger now provides a modern package exports system that gives users more precise control over how they import and use the library. This feature is part of Node.js's newer module resolution algorithm and offers several benefits:
+  </p>
+
+  <ul>
+    <li><strong>Granular Access Control:</strong> Explicitly define which parts of your package are accessible to users</li>
+    <li><strong>Multiple Entry Points:</strong> Allow users to import specific functionality without loading the entire package</li>
+    <li><strong>Dual Format Support:</strong> Support both CommonJS and ES Modules in the same package</li>
+    <li><strong>TypeScript Integration:</strong> Provide type definitions for better IDE support and type checking</li>
+  </ul>
+
+  <p>
+    With package exports, users can import only the specific functionality they need, which can lead to smaller bundle sizes and better performance in their applications.
+  </p>
+
+  <div class="code-example">
+    <h4>CommonJS (Node.js)</h4>
+    <pre><code class="language-javascript">// Import the entire package
+const fractaledger = require('fractaledger');
+
+// Import specific modules
+const { BlockchainConnector } = require('fractaledger/blockchain');
+const { initializeWalletManager } = require('fractaledger/wallet');
+const { SPVTransceiver } = require('fractaledger/transceivers');
+const { startApiServer } = require('fractaledger/api');</code></pre>
+
+    <h4>ES Modules (Modern JavaScript)</h4>
+    <pre><code class="language-javascript">// Import the entire package
+import fractaledger from 'fractaledger';
+
+// Import specific modules
+import { BlockchainConnector } from 'fractaledger/blockchain';
+import { initializeWalletManager } from 'fractaledger/wallet';
+import { SPVTransceiver } from 'fractaledger/transceivers';
+import { startApiServer } from 'fractaledger/api';</code></pre>
+  </div>
+</div>

@@ -1,0 +1,151 @@
+<div class="section-content">
+  <h2>Package Exports Implementation</h2>
+  
+  <p>
+    The package exports feature in FractaLedger is implemented through the <code>exports</code> field in <code>package.json</code>. This field defines the entry points for the package and controls how users can import different parts of the library.
+  </p>
+
+  <div class="code-example">
+    <h4>Package Exports Configuration</h4>
+    <pre><code class="language-json">"exports": {
+  ".": {
+    "import": "./dist/esm/src/index.js",
+    "require": "./dist/src/index.js",
+    "types": "./dist/src/index.d.ts"
+  },
+  "./blockchain": {
+    "import": "./dist/esm/src/blockchain/index.js",
+    "require": "./dist/src/blockchain/index.js",
+    "types": "./dist/src/blockchain/types.d.ts"
+  },
+  "./wallet": {
+    "import": "./dist/esm/src/wallet/walletManager.js",
+    "require": "./dist/src/wallet/walletManager.js",
+    "types": "./dist/src/wallet/types.d.ts"
+  },
+  "./transceivers": {
+    "import": "./dist/esm/transceivers/index.js",
+    "require": "./dist/transceivers/index.js",
+    "types": "./dist/transceivers/types.d.ts"
+  },
+  "./api": {
+    "import": "./dist/esm/src/api/index.js",
+    "require": "./dist/src/api/index.js",
+    "types": "./dist/src/api/types.d.ts"
+  },
+  "./bin": {
+    "init": "./dist/bin/init.js",
+    "generate-transceiver": "./dist/bin/generate-transceiver.js",
+    "generate-config": "./dist/bin/generate-config.js",
+    "generate-api-extension": "./dist/bin/generate-api-extension.js"
+  }
+}</code></pre>
+  </div>
+
+  <p>
+    Each entry in the <code>exports</code> field defines a subpath that users can import. For example, <code>"./blockchain"</code> allows users to import from <code>'fractaledger/blockchain'</code>. Each subpath can have different entry points for different module formats:
+  </p>
+
+  <ul>
+    <li><strong>import:</strong> The entry point for ES Modules (using <code>import</code> syntax)</li>
+    <li><strong>require:</strong> The entry point for CommonJS (using <code>require()</code> syntax)</li>
+    <li><strong>types:</strong> The TypeScript definition file for this subpath</li>
+  </ul>
+
+  <h3>Module Index Files</h3>
+
+  <p>
+    To support the package exports structure, we've created index files for each module that re-export the public API:
+  </p>
+
+  <div class="code-example">
+    <h4>src/blockchain/index.js</h4>
+    <pre><code class="language-javascript">/**
+ * Blockchain Module
+ * 
+ * This module exports all blockchain-related functionality, including:
+ * - BlockchainConnector: For interacting with UTXO-based blockchains
+ * - TransactionBuilder: For creating and signing transactions
+ * - TransceiverManager: For managing transaction broadcasting and wallet monitoring
+ * - UTXOTransceiver: Interface for UTXO-based blockchain transceivers
+ * - Connector management functions: For initializing and managing blockchain connectors
+ */
+
+const { BlockchainConnector } = require('./blockchainConnector');
+const { TransactionBuilder, getNetworkParams } = require('./transactionBuilder');
+const { TransceiverManager } = require('./transceiverManager');
+const { UTXOTransceiver } = require('./utxoTransceiver');
+const connectorManager = require('./connectorManager');
+
+module.exports = {
+  BlockchainConnector,
+  TransactionBuilder,
+  TransceiverManager,
+  UTXOTransceiver,
+  getNetworkParams,
+  ...connectorManager
+};</code></pre>
+  </div>
+
+  <h3>Build Process</h3>
+
+  <p>
+    The build process has been updated to generate both CommonJS and ES Modules versions of the code, as well as TypeScript definitions:
+  </p>
+
+  <div class="code-example">
+    <h4>package.json (build scripts)</h4>
+    <pre><code class="language-json">"scripts": {
+  "build:types": "tsc",
+  "build:cjs": "mkdir -p dist && cp -r src transceivers fractaledger-template.json README.md LICENSE dist/ && mkdir -p dist/bin && cp -r bin/* dist/bin/ && chmod +x dist/bin/*.js",
+  "build:esm": "rollup -c",
+  "build": "npm run build:types && npm run build:cjs && npm run build:esm"
+}</code></pre>
+  </div>
+
+  <p>
+    This build process generates:
+  </p>
+
+  <ol>
+    <li>TypeScript definitions using <code>tsc</code></li>
+    <li>CommonJS modules by copying the source files</li>
+    <li>ES Modules using Rollup</li>
+  </ol>
+
+  <h3>Rollup Configuration</h3>
+
+  <p>
+    Rollup is used to bundle the code into ES Modules format. The configuration is defined in <code>rollup.config.js</code>:
+  </p>
+
+  <div class="code-example">
+    <h4>rollup.config.js</h4>
+    <pre><code class="language-javascript">import { nodeResolve } from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+
+export default [
+  // Main package
+  {
+    input: 'src/index.js',
+    output: {
+      file: 'dist/esm/src/index.js',
+      format: 'esm'
+    },
+    external: ['fs', 'path', 'crypto', 'events', 'util'],
+    plugins: [nodeResolve(), commonjs()]
+  },
+  // Blockchain module
+  {
+    input: 'src/blockchain/index.js',
+    output: {
+      file: 'dist/esm/src/blockchain/index.js',
+      format: 'esm'
+    },
+    external: ['fs', 'path', 'crypto', 'events', 'util'],
+    plugins: [nodeResolve(), commonjs()]
+  },
+  // Additional modules would be configured similarly
+];</code></pre>
+  </div>
+</div>

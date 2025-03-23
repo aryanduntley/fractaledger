@@ -2,6 +2,7 @@
  * FractaLedger - Main Entry Point
  * 
  * This file initializes and starts the FractaLedger system.
+ * It also exports all the core functionality for programmatic usage.
  */
 
 const { loadConfig } = require('./config/configLoader');
@@ -114,4 +115,16 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { main };
+// Export all core functionality for programmatic usage
+module.exports = {
+  main,
+  loadConfig,
+  initializeBlockchainConnectors,
+  monitorConnectorHealth,
+  stopHealthMonitoring,
+  initializeWalletManager,
+  initializeHyperledger,
+  initializeChaincodeManager,
+  initializeBalanceReconciliation,
+  startApiServer
+};

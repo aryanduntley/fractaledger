@@ -609,6 +609,122 @@ npm run build
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Import Paths
+
+FractaLedger provides several import paths for accessing specific functionality:
+
+### CommonJS (Node.js)
+
+```javascript
+// Import the entire package
+const fractaledger = require('fractaledger');
+
+// Import specific modules
+const { BlockchainConnector } = require('fractaledger/blockchain');
+const { initializeWalletManager } = require('fractaledger/wallet');
+const { SPVTransceiver } = require('fractaledger/transceivers');
+const { startApiServer } = require('fractaledger/api');
+```
+
+### ES Modules (Modern JavaScript)
+
+```javascript
+// Import the entire package
+import fractaledger from 'fractaledger';
+
+// Import specific modules
+import { BlockchainConnector } from 'fractaledger/blockchain';
+import { initializeWalletManager } from 'fractaledger/wallet';
+import { SPVTransceiver } from 'fractaledger/transceivers';
+import { startApiServer } from 'fractaledger/api';
+```
+
+## TypeScript Support
+
+FractaLedger includes TypeScript definitions for better IDE support and type checking. When using TypeScript, you'll get autocompletion and type checking for all FractaLedger APIs:
+
+```typescript
+import { BlockchainConnector } from 'fractaledger/blockchain';
+import { 
+  WalletConfig, 
+  TransactionOptions, 
+  CreateTransactionOptions, 
+  SendTransactionOptions 
+} from 'fractaledger/blockchain';
+
+// Create a blockchain connector with proper type checking
+const config: WalletConfig = {
+  name: 'btc_wallet_1',
+  network: 'mainnet',
+  walletAddress: 'bc1q...',
+  secretEnvVar: 'BTC_WALLET_1_SECRET',
+  transceiver: {
+    method: 'callback',
+    callbackModule: './transceivers/utxo-transceiver.js'
+  }
+};
+
+const connector = new BlockchainConnector('bitcoin', config);
+
+// Create a transaction with proper type checking
+const createOptions: CreateTransactionOptions = {
+  opReturn: 'Hello, world!',
+  feeRate: 2
+};
+
+const transaction = await connector.createTransaction(inputs, outputs, createOptions);
+
+// Send a transaction with proper type checking
+const sendOptions: SendTransactionOptions = {
+  fee: 10000,
+  feeRate: 2,
+  utxos: inputs,
+  opReturn: 'Hello, world!'
+};
+
+const result = await connector.sendTransaction('bc1q...', 0.1, sendOptions);
+```
+
+### Specialized Transaction Interfaces
+
+FractaLedger provides specialized interfaces for different transaction operations:
+
+1. **TransactionOptions**: General interface for transaction operations
+   - `opReturn?`: Optional OP_RETURN data
+   - `fee?`: Optional transaction fee
+   - `feeRate?`: Optional fee rate in satoshis per byte
+   - `utxos`: Required UTXOs to use for the transaction
+
+2. **CreateTransactionOptions**: Interface for the `createTransaction` method
+   - `opReturn?`: Optional OP_RETURN data
+   - `fee?`: Optional transaction fee
+   - `feeRate?`: Optional fee rate in satoshis per byte
+   - `utxos?`: Optional UTXOs to use for the transaction
+
+3. **SendTransactionOptions**: Interface for the `sendTransaction` method
+   - `opReturn?`: Optional OP_RETURN data
+   - `fee`: Required transaction fee
+   - `feeRate`: Required fee rate in satoshis per byte
+   - `utxos`: Required UTXOs to use for the transaction
+
+### Working with Optional Properties
+
+When working with optional properties in TypeScript (marked with `?`), you may encounter type compatibility issues. In these cases, you can use type assertions to tell TypeScript that you know what you're doing:
+
+```typescript
+const sendOptions = {
+  fee: 10000,
+  feeRate: 2,
+  utxos: inputs,
+  opReturn: 'Hello, world!'
+};
+
+// Use type assertion when TypeScript has trouble with complex interfaces
+const result = await connector.sendTransaction('bc1q...', 0.1, sendOptions as any);
+```
+
+For more detailed information about TypeScript support, see [PackageExportsImplementation.md](PackageExportsImplementation.md).
+
 ## Documentation
 
 FractaLedger provides comprehensive documentation across various files. Here's a complete list of documentation files available in the project:
@@ -617,6 +733,7 @@ FractaLedger provides comprehensive documentation across various files. Here's a
 - [README.md](README.md) - Main project documentation
 - [API.md](API.md) - API documentation
 - [STRUCTURE.md](STRUCTURE.md) - Project structure documentation
+- [PackageExportsImplementation.md](PackageExportsImplementation.md) - Exports and typescript documentation
 
 ### Component Documentation
 - [docs/BaseInternalWallet.md](docs/BaseInternalWallet.md) - Base internal wallet documentation

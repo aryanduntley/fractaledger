@@ -2,6 +2,60 @@
 
 This document provides an overview of the FractaLedger API endpoints and how to use them.
 
+## Importing the API
+
+You can import the API functionality directly:
+
+```javascript
+// CommonJS
+const { startApiServer } = require('fractaledger/api');
+
+// ES Modules
+import { startApiServer } from 'fractaledger/api';
+```
+
+This allows you to integrate the FractaLedger API into your own Express application:
+
+```javascript
+const express = require('express');
+const { startApiServer } = require('fractaledger/api');
+
+// Create your Express app
+const app = express();
+
+// Add your own middleware and routes
+app.use(express.json());
+app.get('/custom-endpoint', (req, res) => {
+  res.json({ message: 'Custom endpoint' });
+});
+
+// Initialize FractaLedger components
+const config = await loadConfig();
+const blockchainConnectors = await initializeBlockchainConnectors(config);
+const fabricClient = await initializeHyperledger(config);
+const walletManager = await initializeWalletManager(config, blockchainConnectors, fabricClient);
+const chaincodeManager = await initializeChaincodeManager(config, fabricClient);
+const balanceReconciliation = await initializeBalanceReconciliation(config, walletManager, fabricClient);
+
+// Start the FractaLedger API server with your app
+const server = await startApiServer(
+  config,
+  blockchainConnectors,
+  walletManager,
+  fabricClient,
+  chaincodeManager,
+  balanceReconciliation,
+  app // Pass your Express app
+);
+
+// The server object includes:
+// - app: The Express app
+// - authenticateJWT: Middleware for JWT authentication
+// - dependencies: FractaLedger dependencies
+// - close: Function to close the server
+// - registerExtension: Function to register API extensions
+```
+
 ## Authentication
 
 All API endpoints (except `/api/health` and `/api/auth/login`) require authentication using a JWT token.

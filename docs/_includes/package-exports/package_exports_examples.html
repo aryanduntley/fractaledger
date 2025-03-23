@@ -1,0 +1,220 @@
+<div class="section-content">
+  <h2>Package Exports Examples</h2>
+  
+  <p>
+    This section provides practical examples of how to use FractaLedger's package exports in different scenarios. These examples demonstrate the flexibility and power of the new package exports system.
+  </p>
+
+  <h3>Basic Usage Examples</h3>
+
+  <div class="code-example">
+    <h4>Importing the Entire Package</h4>
+    <pre><code class="language-javascript">// CommonJS
+const fractaledger = require('fractaledger');
+
+// ES Modules
+import fractaledger from 'fractaledger';
+
+// Use the package
+const connector = new fractaledger.BlockchainConnector('bitcoin', config);</code></pre>
+
+    <h4>Importing Specific Modules</h4>
+    <pre><code class="language-javascript">// CommonJS
+const { BlockchainConnector } = require('fractaledger/blockchain');
+const { initializeWalletManager } = require('fractaledger/wallet');
+
+// ES Modules
+import { BlockchainConnector } from 'fractaledger/blockchain';
+import { initializeWalletManager } from 'fractaledger/wallet';
+
+// Use the imported modules
+const connector = new BlockchainConnector('bitcoin', config);
+const walletManager = initializeWalletManager(config);</code></pre>
+  </div>
+
+  <h3>Advanced Usage Examples</h3>
+
+  <div class="code-example">
+    <h4>Working with Blockchain Connectors</h4>
+    <pre><code class="language-javascript">// Import blockchain module
+import { 
+  BlockchainConnector, 
+  initializeBlockchainConnector,
+  getConnectorByName
+} from 'fractaledger/blockchain';
+
+// Import types for TypeScript users
+import type { 
+  WalletConfig, 
+  TransactionOptions 
+} from 'fractaledger/blockchain';
+
+// Initialize a connector
+const config = {
+  name: 'btc_wallet_1',
+  network: 'testnet',
+  walletAddress: 'bc1q...',
+  secretEnvVar: 'BTC_WALLET_1_SECRET',
+  transceiver: {
+    method: 'callback',
+    callbackModule: './transceivers/utxo-transceiver.js'
+  }
+};
+
+// Method 1: Direct instantiation
+const connector1 = new BlockchainConnector('bitcoin', config);
+
+// Method 2: Using the initialization function
+const connector2 = await initializeBlockchainConnector('bitcoin', config);
+
+// Method 3: Get an existing connector by name
+const connector3 = getConnectorByName('btc_wallet_1');</code></pre>
+
+    <h4>Working with Transceivers</h4>
+    <pre><code class="language-javascript">// Import transceivers module
+import { 
+  UTXOTransceiver,
+  SPVTransceiver
+} from 'fractaledger/transceivers';
+
+// Import types for TypeScript users
+import type { TransceiverConfig } from 'fractaledger/blockchain';
+
+// Create a custom transceiver
+class MyCustomTransceiver extends UTXOTransceiver {
+  constructor(config) {
+    super(config);
+    // Custom initialization
+  }
+
+  async broadcastTransaction(txHex, metadata) {
+    // Custom implementation
+    console.log('Broadcasting transaction:', txHex);
+    return 'tx_hash_123';
+  }
+
+  // Override other methods as needed
+}
+
+// Use the custom transceiver
+const transceiverConfig = {
+  method: 'callback',
+  apiUrl: 'https://api.example.com',
+  monitoringInterval: 60000
+};
+
+const transceiver = new MyCustomTransceiver(transceiverConfig);</code></pre>
+
+    <h4>Working with Wallet Management</h4>
+    <pre><code class="language-javascript">// Import wallet module
+import { 
+  initializeWalletManager,
+  createInternalWallet,
+  getInternalWalletBalance
+} from 'fractaledger/wallet';
+
+// Initialize wallet manager
+const walletManager = initializeWalletManager(config);
+
+// Create an internal wallet
+const internalWallet = await createInternalWallet({
+  name: 'user_wallet_1',
+  primaryWalletName: 'btc_wallet_1',
+  description: 'User wallet for John Doe'
+});
+
+// Get internal wallet balance
+const balance = await getInternalWalletBalance('user_wallet_1');
+
+console.log(`Wallet ${internalWallet.name} has balance: ${balance}`);</code></pre>
+  </div>
+
+  <h3>TypeScript Examples</h3>
+
+  <div class="code-example">
+    <h4>Creating and Sending Transactions</h4>
+    <pre><code class="language-typescript">import { BlockchainConnector } from 'fractaledger/blockchain';
+import type { 
+  UTXOInput, 
+  UTXOOutput, 
+  CreateTransactionOptions,
+  SendTransactionOptions,
+  TransactionResult
+} from 'fractaledger/blockchain';
+
+// Get a connector
+const connector = getConnectorByName('btc_wallet_1');
+
+// Define inputs and outputs
+const inputs: UTXOInput[] = [
+  {
+    txid: '0x1234567890abcdef',
+    vout: 0,
+    value: 100000000,
+    height: 700000,
+    confirmations: 6
+  }
+];
+
+const outputs: UTXOOutput[] = [
+  {
+    address: 'bc1q...',
+    value: 50000000
+  },
+  {
+    address: 'bc1q...',
+    value: 49990000
+  }
+];
+
+// Create a transaction
+const createOptions: CreateTransactionOptions = {
+  opReturn: 'Hello, world!',
+  feeRate: 2
+};
+
+const transaction: TransactionResult = await connector.createTransaction(
+  inputs, 
+  outputs, 
+  createOptions
+);
+
+// Send a transaction
+const sendOptions: SendTransactionOptions = {
+  fee: 10000,
+  feeRate: 2,
+  utxos: inputs,
+  opReturn: 'Hello, world!'
+};
+
+const result = await connector.sendTransaction(
+  'bc1q...', 
+  0.1, 
+  sendOptions
+);</code></pre>
+
+    <h4>Working with Events</h4>
+    <pre><code class="language-typescript">import { BlockchainConnector } from 'fractaledger/blockchain';
+import type { TransactionEvent } from 'fractaledger/blockchain';
+
+// Get a connector
+const connector = getConnectorByName('btc_wallet_1');
+
+// Listen for transaction events
+connector.on('transaction', (event: TransactionEvent) => {
+  console.log(`New transaction: ${event.txid}`);
+  console.log(`Amount: ${event.amount}`);
+  console.log(`Confirmations: ${event.confirmations}`);
+  
+  // Process the transaction
+  if (event.confirmations >= 6) {
+    console.log('Transaction is confirmed');
+  }
+});
+
+// Start monitoring a wallet address
+await connector.monitorWalletAddress('bc1q...', (event: string, data: any) => {
+  console.log(`Event: ${event}`, data);
+});</code></pre>
+  </div>
+</div>

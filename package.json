@@ -25,6 +25,40 @@
   "author": "Aryan Duntley",
   "type": "commonjs",
   "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/src/index.js",
+      "require": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    },
+    "./blockchain": {
+      "import": "./dist/esm/src/blockchain/index.js",
+      "require": "./dist/src/blockchain/index.js",
+      "types": "./dist/src/blockchain/types.d.ts"
+    },
+    "./wallet": {
+      "import": "./dist/esm/src/wallet/walletManager.js",
+      "require": "./dist/src/wallet/walletManager.js",
+      "types": "./dist/src/wallet/types.d.ts"
+    },
+    "./transceivers": {
+      "import": "./dist/esm/transceivers/index.js",
+      "require": "./dist/transceivers/index.js",
+      "types": "./dist/transceivers/types.d.ts"
+    },
+    "./api": {
+      "import": "./dist/esm/src/api/index.js",
+      "require": "./dist/src/api/index.js",
+      "types": "./dist/src/api/types.d.ts"
+    },
+    "./bin": {
+      "init": "./dist/bin/init.js",
+      "generate-transceiver": "./dist/bin/generate-transceiver.js",
+      "generate-config": "./dist/bin/generate-config.js",
+      "generate-api-extension": "./dist/bin/generate-api-extension.js"
+    }
+  },
   "bin": {
     "fractaledger-init": "dist/bin/init.js",
     "fractaledger-generate-transceiver": "dist/bin/generate-transceiver.js",
@@ -47,7 +81,10 @@
     "format": "prettier --write \"src/**/*.js\"",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "build": "mkdir -p dist && cp -r src transceivers fractaledger-template.json README.md LICENSE dist/ && mkdir -p dist/bin && cp -r bin/* dist/bin/ && chmod +x dist/bin/*.js",
+    "build:types": "tsc",
+    "build:cjs": "mkdir -p dist && cp -r src transceivers fractaledger-template.json README.md LICENSE dist/ && mkdir -p dist/bin && cp -r bin/* dist/bin/ && chmod +x dist/bin/*.js",
+    "build:esm": "rollup -c",
+    "build": "npm run build:types && npm run build:cjs && npm run build:esm",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -65,18 +102,29 @@
     "winston": "^3.8.2"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.11.24",
     "chai": "^4.3.7",
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-jest": "^27.2.1",
     "eslint-plugin-node": "^11.1.0",
+    "glob": "^10.3.10",
     "jest": "^29.5.0",
     "mocha": "^10.2.0",
     "nodemon": "^3.1.0",
     "prettier": "^2.8.7",
+    "rollup": "^4.12.0",
+    "rollup-plugin-typescript2": "^0.36.0",
     "semver": "^7.5.4",
     "sinon": "^15.0.3",
-    "supertest": "^6.3.3"
+    "supertest": "^6.3.3",
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=14.0.0"

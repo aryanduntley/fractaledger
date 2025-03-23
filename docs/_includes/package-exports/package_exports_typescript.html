@@ -1,0 +1,150 @@
+<div class="section-content">
+  <h2>TypeScript Support</h2>
+  
+  <p>
+    FractaLedger now includes comprehensive TypeScript definitions that provide better IDE support, type checking, and documentation for TypeScript users. These definitions are automatically included with the package and are accessible through the package exports system.
+  </p>
+
+  <h3>Type Definition Files</h3>
+
+  <p>
+    The following TypeScript definition files are included in the package:
+  </p>
+
+  <ul>
+    <li><code>src/types.d.ts</code>: Main module type definitions</li>
+    <li><code>src/blockchain/types.d.ts</code>: Blockchain module type definitions</li>
+    <li><code>src/wallet/types.d.ts</code>: Wallet module type definitions</li>
+    <li><code>src/api/types.d.ts</code>: API module type definitions</li>
+    <li><code>transceivers/types.d.ts</code>: Transceivers module type definitions</li>
+  </ul>
+
+  <p>
+    These files define the types for the public API of each module, providing better IDE support and type checking for TypeScript users.
+  </p>
+
+  <h3>Specialized Transaction Interfaces</h3>
+
+  <p>
+    One of the key improvements in the TypeScript definitions is the creation of specialized interfaces for different transaction operations:
+  </p>
+
+  <div class="code-example">
+    <h4>src/blockchain/types.d.ts</h4>
+    <pre><code class="language-typescript">/**
+ * Transaction options interface
+ */
+export interface TransactionOptions {
+  opReturn?: string;
+  fee?: number;
+  feeRate?: number;
+  utxos: UTXOInput[];  // Required for sendTransaction
+}
+
+/**
+ * Transaction creation options interface
+ */
+export interface CreateTransactionOptions {
+  opReturn?: string;
+  fee?: number;
+  feeRate?: number;
+  utxos?: UTXOInput[];
+}
+
+/**
+ * Send transaction options interface
+ */
+export interface SendTransactionOptions {
+  opReturn?: string;  // Optional OP_RETURN data
+  fee: number;        // Required transaction fee
+  feeRate: number;    // Required fee rate in satoshis per byte
+  utxos: UTXOInput[]; // Required UTXOs to use for the transaction
+}</code></pre>
+  </div>
+
+  <p>
+    These specialized interfaces make it clear which properties are required for each method, improving the developer experience and reducing errors.
+  </p>
+
+  <h3>Using TypeScript with FractaLedger</h3>
+
+  <p>
+    When using FractaLedger with TypeScript, you'll get autocompletion and type checking for all FractaLedger APIs:
+  </p>
+
+  <div class="code-example">
+    <h4>Example TypeScript Usage</h4>
+    <pre><code class="language-typescript">import { BlockchainConnector } from 'fractaledger/blockchain';
+import { 
+  WalletConfig, 
+  TransactionOptions, 
+  CreateTransactionOptions, 
+  SendTransactionOptions 
+} from 'fractaledger/blockchain';
+
+// Create a blockchain connector with proper type checking
+const config: WalletConfig = {
+  name: 'btc_wallet_1',
+  network: 'mainnet',
+  walletAddress: 'bc1q...',
+  secretEnvVar: 'BTC_WALLET_1_SECRET',
+  transceiver: {
+    method: 'callback',
+    callbackModule: './transceivers/utxo-transceiver.js'
+  }
+};
+
+const connector = new BlockchainConnector('bitcoin', config);
+
+// Create a transaction with proper type checking
+const createOptions: CreateTransactionOptions = {
+  opReturn: 'Hello, world!',
+  feeRate: 2
+};
+
+const transaction = await connector.createTransaction(inputs, outputs, createOptions);
+
+// Send a transaction with proper type checking
+const sendOptions: SendTransactionOptions = {
+  fee: 10000,
+  feeRate: 2,
+  utxos: inputs,
+  opReturn: 'Hello, world!'
+};
+
+const result = await connector.sendTransaction('bc1q...', 0.1, sendOptions);</code></pre>
+  </div>
+
+  <h3>Working with Optional Properties</h3>
+
+  <p>
+    In TypeScript, when a property is marked with a question mark (like <code>opReturn?: string</code>), it means:
+  </p>
+
+  <ol>
+    <li>The property is optional and can be omitted when creating an object of that type.</li>
+    <li>If included, the property must be of the specified type (in this case, a string).</li>
+    <li>The type of the property is actually a union type: <code>string | undefined</code>. This means the property can either be a string or undefined.</li>
+  </ol>
+
+  <p>
+    When working with optional properties in TypeScript, you may encounter type compatibility issues when passing objects to methods that expect specific property types. In these cases, you can use type assertions to tell TypeScript that you know what you're doing:
+  </p>
+
+  <div class="code-example">
+    <h4>Using Type Assertions</h4>
+    <pre><code class="language-typescript">const sendOptions = {
+  fee: 10000,
+  feeRate: 2,
+  utxos: inputs,
+  opReturn: 'Hello, world!'
+};
+
+// Use type assertion when TypeScript has trouble with complex interfaces
+const result = await connector.sendTransaction('bc1q...', 0.1, sendOptions as any);</code></pre>
+  </div>
+
+  <p>
+    This approach allows us to bypass TypeScript's type checking when we encounter complex type compatibility issues. While it's generally better to use proper typing, sometimes TypeScript's type system can be overly strict or have difficulty with certain patterns, especially when dealing with optional properties and complex interfaces.
+  </p>
+</div>
