@@ -159,7 +159,17 @@ To implement a custom transceiver, follow these steps:
 
 ### 1. Create a New Transceiver File
 
-Create a new file for your transceiver implementation. You can use the example transceiver as a starting point:
+You can create a new transceiver file using the `generate-transceiver.js` tool, which supports both the example transceiver and the SPV transceiver:
+
+```bash
+# For the SPV transceiver (recommended)
+npx fractaledger-generate-transceiver --type spv --output ./my-transceivers
+
+# For other blockchain-specific transceivers
+npx fractaledger-generate-transceiver --type bitcoin --output ./my-transceivers
+```
+
+Or manually copy the example transceiver as a starting point:
 
 ```bash
 cp fractaledger/transceivers/utxo-transceiver-example.js ./my-transceivers/bitcoin-transceiver.js
@@ -270,7 +280,50 @@ Update your configuration file to use your custom transceiver:
 
 ## Communication Setup
 
-To set up communication between the app and blockchains, you need to implement the transceiver methods that interact with the blockchain. There are several approaches you can take:
+To set up communication between the app and blockchains, you need to implement the transceiver methods that interact with the blockchain. FractaLedger provides a default SPV transceiver implementation that works out-of-the-box with Bitcoin, Litecoin, and Dogecoin, but you can also create your own custom implementation if needed.
+
+### Default SPV Configuration
+
+The system comes with a default configuration that uses the SPV transceiver for Bitcoin, Litecoin, and Dogecoin. This configuration is defined in `fractaledger-template.json` and `config-template.json`:
+
+```json
+{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "callbackModule": "./transceivers/spv-transceiver.js",
+        "config": {
+          "blockchain": "bitcoin",
+          "network": "mainnet",
+          "server": "electrum.blockstream.info",
+          "port": 50002,
+          "protocol": "ssl",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
+      }
+    }
+  ]
+}
+```
+
+This default configuration provides a ready-to-use setup for UTXO-based blockchains using the SPV transceiver. You only need to replace the wallet address and secret environment variable with your own values.
+
+The SPV transceiver (`spv-transceiver.js`) provides a unified implementation for Bitcoin, Litecoin, and Dogecoin using the Electrum protocol. It offers:
+
+- **Unified Implementation**: One transceiver for all UTXO-based blockchains
+- **SPV Verification**: Lightweight verification without downloading the entire blockchain
+- **Electrum Protocol**: Reliable and widely-used protocol for SPV clients
+- **Multiple Monitoring Methods**: Both subscription-based and polling-based monitoring
+- **Robust Error Handling**: Automatic reconnection and retry logic
+- **Default Configuration**: Pre-configured for popular Electrum servers
+
+If you want to use a different approach, there are several options:
 
 ### 1. Full Node Implementation
 

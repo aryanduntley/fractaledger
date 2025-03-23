@@ -28,7 +28,15 @@
       <h3>Custom Transceiver Monitoring</h3>
     </div>
     <div class="method-content">
-      <p>Implement the <code>monitorWalletAddress</code> and <code>stopMonitoringWalletAddress</code> methods in your custom transceiver to handle monitoring using your preferred approach.</p>
+      <p>Implement the <code>monitorWalletAddress</code> and <code>stopMonitoringWalletAddress</code> methods in your custom transceiver to handle monitoring using your preferred approach. You can extend the built-in SPV transceiver using the generate-transceiver.js tool.</p>
+      
+      <h4>Extending the SPV Transceiver</h4>
+      <p>The system includes a built-in SPV transceiver that provides robust monitoring capabilities. You can create a local copy of this transceiver to customize it for your specific needs:</p>
+      <div class="code-block">
+        <pre><code># Create a local copy of the SPV transceiver
+npx fractaledger-generate-transceiver --type spv --output ./my-transceivers</code></pre>
+      </div>
+      <p>This will create a copy of the SPV transceiver in your project directory that you can customize while maintaining compatibility with future updates to the FractaLedger package.</p>
       <h4>Implementation Options</h4>
       <ul>
         <li><strong>Websocket Connections</strong>: Establish persistent websocket connections to blockchain nodes or services</li>

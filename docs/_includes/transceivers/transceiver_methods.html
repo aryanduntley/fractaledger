@@ -26,15 +26,20 @@
   "secretEnvVar": "BTC_WALLET_1_SECRET",
   "transceiver": {
     "method": "callback",
-    "module": "./transceivers/utxo-transceiver.js",
+    "callbackModule": "./transceivers/spv-transceiver.js",
     "config": {
-      "apiUrl": "https://blockstream.info/api",
+      "blockchain": "bitcoin",
+      "network": "mainnet",
+      "server": "electrum.blockstream.info",
+      "port": 50002,
+      "protocol": "ssl",
       "monitoringInterval": 60000,
       "autoMonitor": true
     }
   }
 }</code></pre>
       </div>
+      <p><strong>Note:</strong> The system comes with a default SPV transceiver implementation that supports Bitcoin, Litecoin, and Dogecoin using the Electrum protocol. This is the recommended transceiver for UTXO-based blockchains.</p>
     </div>
   </div>
   

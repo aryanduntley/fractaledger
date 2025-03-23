@@ -145,13 +145,163 @@ async function startApiServer(config, blockchainConnectors, walletManager, fabri
     app.get('/api/wallets/:blockchain/:name/transactions', authenticateJWT, async (req, res) => {
       try {
         const { blockchain, name } = req.params;
-        const { limit } = req.query;
+        const { limit, page, startDate, endDate } = req.query;
         const wallet = walletManager.getWallet(blockchain, name);
+        
+        // Get transaction history
         const transactions = await wallet.getTransactionHistory(limit ? parseInt(limit) : 10);
         
-        res.json(transactions);
+        // Apply filters if provided
+        let filteredTransactions = [...transactions];
+        
+        // Filter by date range if provided
+        if (startDate || endDate) {
+          const startTimestamp = startDate ? new Date(startDate).getTime() : 0;
+          const endTimestamp = endDate ? new Date(endDate).getTime() : Date.now();
+          
+          filteredTransactions = filteredTransactions.filter(tx => 
+            tx.timestamp >= startTimestamp && tx.timestamp <= endTimestamp
+          );
+        }
+        
+        // Apply pagination
+        const pageNum = page ? parseInt(page) : 1;
+        const pageSize = limit ? parseInt(limit) : 10;
+        const startIndex = (pageNum - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+        
+        // Return with pagination info
+        res.json({
+          transactions: paginatedTransactions,
+          pagination: {
+            page: pageNum,
+            limit: pageSize,
+            totalItems: filteredTransactions.length,
+            totalPages: Math.ceil(filteredTransactions.length / pageSize)
+          }
+        });
       } catch (error) {
         res.status(404).json({ error: error.message });
+      }
+    });
+    
+    // Wallet monitoring endpoints
+    app.post('/api/wallets/:blockchain/:name/monitor', authenticateJWT, async (req, res) => {
+      try {
+        const { blockchain, name } = req.params;
+        const messageManager = createMessageManager();
+        
+        // Get the wallet
+        const wallet = walletManager.getWallet(blockchain, name);
+        
+        // Start monitoring the wallet
+        await wallet.monitorWalletAddress(wallet.walletAddress, (transactions) => {
+          // This callback will be called when new transactions are detected
+          logger.info(`New transactions detected for wallet ${blockchain}/${name}`, { transactions });
+        });
+        
+        // Add success message
+        messageManager.addInfo(
+          MessageCode.INFO_007 || 'INFO_007',
+          'Wallet monitoring started',
+          {
+            blockchain,
+            walletName: name
+          }
+        );
+        
+        res.json(messageManager.createResponse({
+          success: true,
+          monitoring: {
+            blockchain,
+            walletName: name,
+            walletAddress: wallet.walletAddress,
+            status: 'monitoring',
+            startedAt: new Date().toISOString()
+          }
+        }));
+      } catch (error) {
+        res.status(500).json({ 
+          success: false,
+          error: error.message,
+          messages: [{
+            type: 'error',
+            code: 'ERROR_001',
+            message: `Failed to start monitoring: ${error.message}`,
+            timestamp: new Date().toISOString()
+          }]
+        });
+      }
+    });
+    
+    app.delete('/api/wallets/:blockchain/:name/monitor', authenticateJWT, async (req, res) => {
+      try {
+        const { blockchain, name } = req.params;
+        const messageManager = createMessageManager();
+        
+        // Get the wallet
+        const wallet = walletManager.getWallet(blockchain, name);
+        
+        // Stop monitoring the wallet
+        await wallet.stopMonitoringWalletAddress(wallet.walletAddress);
+        
+        // Add success message
+        messageManager.addInfo(
+          MessageCode.INFO_008 || 'INFO_008',
+          'Wallet monitoring stopped',
+          {
+            blockchain,
+            walletName: name
+          }
+        );
+        
+        res.json(messageManager.createResponse({
+          success: true,
+          monitoring: {
+            blockchain,
+            walletName: name,
+            walletAddress: wallet.walletAddress,
+            status: 'stopped',
+            stoppedAt: new Date().toISOString()
+          }
+        }));
+      } catch (error) {
+        res.status(500).json({ 
+          success: false,
+          error: error.message,
+          messages: [{
+            type: 'error',
+            code: 'ERROR_002',
+            message: `Failed to stop monitoring: ${error.message}`,
+            timestamp: new Date().toISOString()
+          }]
+        });
+      }
+    });
+    
+    app.get('/api/wallets/monitoring', authenticateJWT, async (req, res) => {
+      try {
+        // Get all monitored addresses from all blockchain connectors
+        const monitoredAddresses = {};
+        
+        for (const blockchain of Object.keys(blockchainConnectors)) {
+          monitoredAddresses[blockchain] = {};
+          
+          for (const [name, connector] of Object.entries(blockchainConnectors[blockchain])) {
+            if (connector.transceiverManager) {
+              const addresses = connector.transceiverManager.getAllMonitoredAddresses();
+              
+              if (addresses.length > 0) {
+                monitoredAddresses[blockchain][name] = addresses;
+              }
+            }
+          }
+        }
+        
+        res.json({ wallets: monitoredAddresses });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
       }
     });
     

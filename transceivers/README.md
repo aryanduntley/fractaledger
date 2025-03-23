@@ -2,6 +2,55 @@
 
 This directory contains transceiver implementations for UTXO-based blockchains. A transceiver is responsible for both broadcasting transactions to the blockchain network and receiving updates about wallet activity. This two-way communication ensures that wallet data stays up-to-date with on-chain transactions.
 
+## Included Transceivers
+
+### SPV Transceiver (spv-transceiver.js)
+
+The SPV (Simplified Payment Verification) transceiver provides a unified implementation for Bitcoin, Litecoin, and Dogecoin using the Electrum protocol. This is the **recommended default transceiver** for UTXO-based blockchains as it offers:
+
+- **Unified Implementation**: One transceiver for all UTXO-based blockchains
+- **SPV Verification**: Lightweight verification without downloading the entire blockchain
+- **Electrum Protocol**: Reliable and widely-used protocol for SPV clients
+- **Multiple Monitoring Methods**: Both subscription-based and polling-based monitoring
+- **Robust Error Handling**: Automatic reconnection and retry logic
+- **Default Configuration**: Pre-configured for popular Electrum servers
+
+To use the SPV transceiver, configure your wallet as follows:
+
+```json
+{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "bc1q...",
+      "secretEnvVar": "BTC_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "callbackModule": "./transceivers/spv-transceiver.js",
+        "config": {
+          "blockchain": "bitcoin",
+          "network": "mainnet",
+          "server": "electrum.blockstream.info",
+          "port": 50002,
+          "protocol": "ssl",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
+      }
+    }
+  ]
+}
+```
+
+### Mock Transceiver (mock-transceiver.js)
+
+A simple mock implementation for testing purposes. It doesn't actually interact with any blockchain network but simulates the behavior of a real transceiver.
+
+### Example Transceiver (utxo-transceiver-example.js)
+
+A template for creating custom transceivers. This is not a functional implementation but provides a starting point for your own custom transceivers.
+
 ## What is a Transceiver?
 
 A transceiver is a module that implements the `UTXOTransceiver` interface defined in `src/blockchain/utxoTransceiver.js`. It provides methods for:
@@ -18,11 +67,13 @@ This approach completely separates transaction creation/signing from the blockch
 
 To use a transceiver, you need to:
 
-1. Create a transceiver implementation that extends the `UTXOTransceiver` interface
+1. Choose an existing transceiver or create a custom implementation that extends the `UTXOTransceiver` interface
 2. Configure your wallet to use the transceiver in the configuration file
 3. The system will automatically load and use your transceiver when needed
 
-### Configuration Example
+### Default Configuration
+
+The system comes with a default configuration that uses the SPV transceiver for Bitcoin, Litecoin, and Dogecoin. This configuration is defined in `fractaledger-template.json` and `config-template.json`:
 
 ```json
 {
@@ -34,14 +85,23 @@ To use a transceiver, you need to:
       "secretEnvVar": "BTC_WALLET_1_SECRET",
       "transceiver": {
         "method": "callback",
-        "callbackModule": "./transceivers/utxo-transceiver.js",
-        "monitoringInterval": 60000,
-        "autoMonitor": true
+        "callbackModule": "./transceivers/spv-transceiver.js",
+        "config": {
+          "blockchain": "bitcoin",
+          "network": "mainnet",
+          "server": "electrum.blockstream.info",
+          "port": 50002,
+          "protocol": "ssl",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
       }
     }
   ]
 }
 ```
+
+This default configuration provides a ready-to-use setup for UTXO-based blockchains using the SPV transceiver. You only need to replace the wallet address and secret environment variable with your own values.
 
 ## Creating a Custom Transceiver
 
@@ -51,7 +111,16 @@ To create a custom transceiver, you need to extend the `UTXOTransceiver` interfa
 
 When using FractaLedger as an npm package, you should **never** modify files directly in the `node_modules` directory. Instead:
 
-1. Copy the example transceiver file to your project directory:
+1. Use the generate-transceiver tool to create a copy of the transceiver in your project directory:
+   ```bash
+   # For the SPV transceiver (recommended)
+   npx fractaledger-generate-transceiver --type spv --output ./my-transceivers
+   
+   # For other blockchain-specific transceivers
+   npx fractaledger-generate-transceiver --type bitcoin --output ./my-transceivers
+   ```
+   
+   Or manually copy the example transceiver file:
    ```bash
    cp node_modules/fractaledger/transceivers/utxo-transceiver-example.js ./my-transceivers/bitcoin-transceiver.js
    ```
@@ -167,54 +236,66 @@ class APITransceiver extends UTXOTransceiver {
 module.exports = APITransceiver;
 ```
 
-#### Electrum Implementation
+#### SPV Implementation (Recommended)
 
-You can implement a transceiver that connects to an Electrum server to broadcast transactions and monitor wallet addresses:
+The system includes a ready-to-use SPV transceiver that connects to Electrum servers for Bitcoin, Litecoin, and Dogecoin:
 
 ```javascript
+// This is already implemented in spv-transceiver.js
 const { UTXOTransceiver } = require('../src/blockchain/utxoTransceiver');
-const { ElectrumClient } = require('electrum-client');
+const ElectrumClient = require('electrum-client');
 
-class ElectrumTransceiver extends UTXOTransceiver {
+class SPVTransceiver extends UTXOTransceiver {
   constructor(config = {}) {
     super(config);
     
-    this.server = config.server || 'electrum.blockstream.info';
-    this.port = config.port || 50002;
-    this.protocol = config.protocol || 'ssl';
-    this.client = null;
+    // Initialize configuration with defaults
+    this.config = {
+      // Default to Bitcoin mainnet if not specified
+      blockchain: 'bitcoin',
+      network: 'mainnet',
+      monitoringInterval: 60000, // 1 minute
+      reconnectInterval: 10000, // 10 seconds
+      maxReconnectAttempts: 5,
+      
+      // Override with user-provided configuration
+      ...config
+    };
+    
+    // Get server details based on blockchain and network
+    const serverConfig = this._getServerConfig();
+    this.serverConfig = serverConfig;
   }
   
   async initialize() {
-    this.client = new ElectrumClient(this.port, this.server, this.protocol);
+    // Connect to the Electrum server
+    this.client = new ElectrumClient(
+      this.serverConfig.port,
+      this.serverConfig.server,
+      this.serverConfig.protocol
+    );
+    
     await this.client.connect();
   }
   
   async broadcastTransaction(txHex, metadata = {}) {
-    try {
-      if (!this.client) {
-        await this.initialize();
-      }
-      
-      const txid = await this.client.blockchain_transaction_broadcast(txHex);
-      return txid;
-    } catch (error) {
-      throw new Error(`Failed to broadcast transaction: ${error.message}`);
+    // Ensure we're connected
+    if (!this.connected) {
+      await this._connect();
     }
+    
+    // Broadcast the transaction
+    const txid = await this.client.blockchain_transaction_broadcast(txHex);
+    return txid;
   }
   
-  async cleanup() {
-    if (this.client) {
-      await this.client.close();
-      this.client = null;
-    }
-  }
-  
-  // Implement other required methods...
+  // Other methods are implemented in the actual file...
 }
 
-module.exports = ElectrumTransceiver;
+module.exports = SPVTransceiver;
 ```
+
+The SPV transceiver provides a complete implementation for all required methods and includes additional features like automatic reconnection, robust error handling, and both subscription-based and polling-based monitoring.
 
 ## Transceiver Events
 

@@ -1,5 +1,57 @@
 <div class="api-section" id="wallet-monitoring">
   <h2>Wallet Monitoring</h2>
+  
+  <div class="endpoint">
+    <h3>Get All Monitored Wallets</h3>
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="path">/api/wallets/monitoring</span>
+    </div>
+    <p>Get a list of all wallets that are currently being monitored.</p>
+
+    <h4>Response</h4>
+    <pre><code>{
+  "monitoredWallets": [
+    {
+      "blockchain": "bitcoin",
+      "walletName": "btc_wallet_1",
+      "walletAddress": "bc1q...",
+      "status": "monitoring",
+      "startedAt": "2025-03-13T12:00:00Z",
+      "method": "spv",
+      "config": {
+        "server": "electrum.blockstream.info",
+        "port": 50002,
+        "protocol": "ssl"
+      }
+    },
+    {
+      "blockchain": "litecoin",
+      "walletName": "ltc_wallet_1",
+      "walletAddress": "ltc1q...",
+      "status": "monitoring",
+      "startedAt": "2025-03-13T12:15:00Z",
+      "method": "spv",
+      "config": {
+        "server": "electrum-ltc.bysh.me",
+        "port": 50002,
+        "protocol": "ssl"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "type": "info",
+      "code": "INFO_009",
+      "message": "Retrieved monitored wallets",
+      "data": {
+        "count": 2
+      },
+      "timestamp": "2025-03-13T12:30:00Z"
+    }
+  ]
+}</code></pre>
+  </div>
 
   <div class="endpoint">
     <h3>Start Monitoring a Wallet Address</h3>

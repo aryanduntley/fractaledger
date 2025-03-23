@@ -27,7 +27,7 @@ for (let i = 0; i < args.length; i++) {
 }
 
 // Validate type
-const validTypes = ['utxo', 'bitcoin', 'litecoin', 'dogecoin'];
+const validTypes = ['utxo', 'bitcoin', 'litecoin', 'dogecoin', 'spv'];
 if (!validTypes.includes(type)) {
   console.error(`Error: Invalid type '${type}'. Valid types are: ${validTypes.join(', ')}`);
   process.exit(1);
@@ -46,7 +46,12 @@ if (!fs.existsSync(outputDir)) {
 }
 
 // Determine source and destination paths
-const sourceFile = path.resolve(__dirname, '../transceivers/utxo-transceiver-example.js');
+let sourceFile;
+if (type === 'spv') {
+  sourceFile = path.resolve(__dirname, '../transceivers/spv-transceiver.js');
+} else {
+  sourceFile = path.resolve(__dirname, '../transceivers/utxo-transceiver-example.js');
+}
 const destinationFile = path.resolve(outputDir, `${type}-transceiver.js`);
 
 // Check if source file exists
@@ -74,58 +79,63 @@ try {
 // Customize the content based on the type
 let customizedContent = content;
 
-// Replace the class name
-customizedContent = customizedContent.replace(
-  'class GenericUTXOTransceiver extends UTXOTransceiver',
-  `class ${type.charAt(0).toUpperCase() + type.slice(1)}Transceiver extends UTXOTransceiver`
-);
+// If it's not the SPV transceiver, customize the class name and module export
+if (type !== 'spv') {
+  // Replace the class name
+  customizedContent = customizedContent.replace(
+    'class GenericUTXOTransceiver extends UTXOTransceiver',
+    `class ${type.charAt(0).toUpperCase() + type.slice(1)}Transceiver extends UTXOTransceiver`
+  );
 
-// Replace the module export
-customizedContent = customizedContent.replace(
-  'module.exports = GenericUTXOTransceiver;',
-  `module.exports = ${type.charAt(0).toUpperCase() + type.slice(1)}Transceiver;`
-);
+  // Replace the module export
+  customizedContent = customizedContent.replace(
+    'module.exports = GenericUTXOTransceiver;',
+    `module.exports = ${type.charAt(0).toUpperCase() + type.slice(1)}Transceiver;`
+  );
+}
 
-// Add blockchain-specific customizations
-if (type === 'bitcoin') {
-  customizedContent = customizedContent.replace(
-    '// Default configuration',
-    '// Bitcoin-specific configuration'
-  );
-  customizedContent = customizedContent.replace(
-    'network: \'mainnet\',',
-    'network: \'mainnet\',\n      apiUrl: \'https://blockstream.info/api\','
-  );
-  customizedContent = customizedContent.replace(
-    'Generic UTXO Transceiver initialized',
-    'Bitcoin Transceiver initialized'
-  );
-} else if (type === 'litecoin') {
-  customizedContent = customizedContent.replace(
-    '// Default configuration',
-    '// Litecoin-specific configuration'
-  );
-  customizedContent = customizedContent.replace(
-    'network: \'mainnet\',',
-    'network: \'mainnet\',\n      apiUrl: \'https://ltc.bitaps.com/api/v1/blockchain\','
-  );
-  customizedContent = customizedContent.replace(
-    'Generic UTXO Transceiver initialized',
-    'Litecoin Transceiver initialized'
-  );
-} else if (type === 'dogecoin') {
-  customizedContent = customizedContent.replace(
-    '// Default configuration',
-    '// Dogecoin-specific configuration'
-  );
-  customizedContent = customizedContent.replace(
-    'network: \'mainnet\',',
-    'network: \'mainnet\',\n      apiUrl: \'https://dogechain.info/api/v1\','
-  );
-  customizedContent = customizedContent.replace(
-    'Generic UTXO Transceiver initialized',
-    'Dogecoin Transceiver initialized'
-  );
+// Add blockchain-specific customizations for non-SPV transceivers
+if (type !== 'spv') {
+  if (type === 'bitcoin') {
+    customizedContent = customizedContent.replace(
+      '// Default configuration',
+      '// Bitcoin-specific configuration'
+    );
+    customizedContent = customizedContent.replace(
+      'network: \'mainnet\',',
+      'network: \'mainnet\',\n      apiUrl: \'https://blockstream.info/api\','
+    );
+    customizedContent = customizedContent.replace(
+      'Generic UTXO Transceiver initialized',
+      'Bitcoin Transceiver initialized'
+    );
+  } else if (type === 'litecoin') {
+    customizedContent = customizedContent.replace(
+      '// Default configuration',
+      '// Litecoin-specific configuration'
+    );
+    customizedContent = customizedContent.replace(
+      'network: \'mainnet\',',
+      'network: \'mainnet\',\n      apiUrl: \'https://ltc.bitaps.com/api/v1/blockchain\','
+    );
+    customizedContent = customizedContent.replace(
+      'Generic UTXO Transceiver initialized',
+      'Litecoin Transceiver initialized'
+    );
+  } else if (type === 'dogecoin') {
+    customizedContent = customizedContent.replace(
+      '// Default configuration',
+      '// Dogecoin-specific configuration'
+    );
+    customizedContent = customizedContent.replace(
+      'network: \'mainnet\',',
+      'network: \'mainnet\',\n      apiUrl: \'https://dogechain.info/api/v1\','
+    );
+    customizedContent = customizedContent.replace(
+      'Generic UTXO Transceiver initialized',
+      'Dogecoin Transceiver initialized'
+    );
+  }
 }
 
 // Write the customized content to the destination file
@@ -148,7 +158,35 @@ try {
 console.log('\nUsage Instructions:');
 console.log('1. Customize the transceiver implementation to fit your needs');
 console.log('2. Update your fractaledger.json configuration to use this transceiver:');
-console.log(`
+
+if (type === 'spv') {
+  console.log(`
+{
+  "bitcoin": [
+    {
+      "name": "btc_wallet_1",
+      "network": "mainnet",
+      "walletAddress": "your-wallet-address",
+      "secretEnvVar": "YOUR_WALLET_SECRET_ENV_VAR",
+      "transceiver": {
+        "method": "callback",
+        "callbackModule": "./${path.relative(process.cwd(), destinationFile)}",
+        "config": {
+          "blockchain": "bitcoin",
+          "network": "mainnet",
+          "server": "electrum.blockstream.info",
+          "port": 50002,
+          "protocol": "ssl",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
+      }
+    }
+  ]
+}
+`);
+} else {
+  console.log(`
 {
   "${type}": [
     {
@@ -157,7 +195,7 @@ console.log(`
       "secretEnvVar": "YOUR_WALLET_SECRET_ENV_VAR",
       "transceiver": {
         "method": "callback",
-        "module": "./${path.relative(process.cwd(), destinationFile)}",
+        "callbackModule": "./${path.relative(process.cwd(), destinationFile)}",
         "config": {
           "apiUrl": "https://api.example.com",
           "monitoringInterval": 60000
@@ -167,3 +205,4 @@ console.log(`
   ]
 }
 `);
+}

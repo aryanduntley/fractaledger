@@ -7,9 +7,16 @@
       "secretEnvVar": "BTC_WALLET_1_SECRET",
       "transceiver": {
         "method": "callback",
-        "callbackModule": "./transceivers/utxo-transceiver.js",
-        "monitoringInterval": 60000,
-        "autoMonitor": true
+        "callbackModule": "./transceivers/spv-transceiver.js",
+        "config": {
+          "blockchain": "bitcoin",
+          "network": "mainnet",
+          "server": "electrum.blockstream.info",
+          "port": 50002,
+          "protocol": "ssl",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
       }
     },
     {
@@ -39,9 +46,16 @@
       "secretEnvVar": "LTC_WALLET_1_SECRET",
       "transceiver": {
         "method": "callback",
-        "callbackModule": "./transceivers/utxo-transceiver.js",
-        "monitoringInterval": 60000,
-        "autoMonitor": true
+        "callbackModule": "./transceivers/spv-transceiver.js",
+        "config": {
+          "blockchain": "litecoin",
+          "network": "mainnet",
+          "server": "electrum-ltc.bysh.me",
+          "port": 50002,
+          "protocol": "ssl",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
       }
     },
     {
@@ -71,9 +85,16 @@
       "secretEnvVar": "DOGE_WALLET_1_SECRET",
       "transceiver": {
         "method": "callback",
-        "callbackModule": "./transceivers/utxo-transceiver.js",
-        "monitoringInterval": 60000,
-        "autoMonitor": true
+        "callbackModule": "./transceivers/spv-transceiver.js",
+        "config": {
+          "blockchain": "dogecoin",
+          "network": "mainnet",
+          "server": "electrum.dogecoin.com",
+          "port": 50002,
+          "protocol": "ssl",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
       }
     },
     {

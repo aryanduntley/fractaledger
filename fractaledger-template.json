@@ -2,19 +2,22 @@
   "bitcoin": [
     {
       "name": "btc_wallet_1",
-      "connectionType": "api",
+      "connectionType": "spv",
       "connectionDetails": {
-        "provider": "blockCypher",
-        "endpoint": "https://api.blockcypher.com/v1/btc/main",
-        "apiKeyEnvVar": "BLOCKCYPHER_API_KEY"
+        "server": "electrum.blockstream.info:50002",
+        "network": "mainnet"
       },
       "walletAddress": "bc1q...",
       "secretEnvVar": "BTC_WALLET_1_SECRET",
       "transceiver": {
         "method": "callback",
-        "module": "./my-transceivers/bitcoin-transceiver.js",
+        "module": "./transceivers/spv-transceiver.js",
         "config": {
-          "apiUrl": "https://blockstream.info/api",
+          "blockchain": "bitcoin",
+          "network": "mainnet",
+          "server": "electrum.blockstream.info",
+          "port": 50002,
+          "protocol": "ssl",
           "monitoringInterval": 60000,
           "autoMonitor": true
         }
@@ -33,12 +36,40 @@
       "secretEnvVar": "LTC_WALLET_1_SECRET",
       "transceiver": {
         "method": "callback",
-        "module": "./my-transceivers/litecoin-transceiver.js",
+        "module": "./transceivers/spv-transceiver.js",
         "config": {
+          "blockchain": "litecoin",
+          "network": "mainnet",
           "server": "electrum-ltc.bysh.me",
           "port": 50002,
           "protocol": "ssl",
-          "monitoringInterval": 120000
+          "monitoringInterval": 60000,
+          "autoMonitor": true
+        }
+      }
+    }
+  ],
+  "dogecoin": [
+    {
+      "name": "doge_wallet_1",
+      "connectionType": "spv",
+      "connectionDetails": {
+        "server": "electrum.dogecoin.com:50002",
+        "network": "mainnet"
+      },
+      "walletAddress": "D...",
+      "secretEnvVar": "DOGE_WALLET_1_SECRET",
+      "transceiver": {
+        "method": "callback",
+        "module": "./transceivers/spv-transceiver.js",
+        "config": {
+          "blockchain": "dogecoin",
+          "network": "mainnet",
+          "server": "electrum.dogecoin.com",
+          "port": 50002,
+          "protocol": "ssl",
+          "monitoringInterval": 60000,
+          "autoMonitor": true
         }
       }
     }
