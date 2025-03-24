@@ -1,12 +1,10 @@
 # FractaLedger
 
-![Beta Badge](https://img.shields.io/badge/status-Beta-yellowgreen)
+**Status: Initial Release** 🚧
 
-**Status: Beta Release** 🚧
+This is the first release of FractaLedger. While the core functionality is in place, some instability is possible, and breaking changes may occur in future releases.
 
-This is a beta version of FractaLedger. While the core functionality is in place, expect some instability, and breaking changes may occur in future releases.
-
-Please try it out, and report any bugs or feedback to help us improve it before the stable release.
+Please try it out, and report any bugs or feedback to help us improve it.
 
 FractaLedger is a configurable off-chain UTXO management system that enables fractional ownership, secure fund distribution, and seamless on-chain interactions across multiple blockchains.
 
