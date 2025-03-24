@@ -12,6 +12,26 @@ FractaLedger is a configurable off-chain UTXO management system that enables fra
 
 FractaLedger solves the challenge of managing fractional ownership of UTXO-based cryptocurrencies (Bitcoin, Litecoin, Dogecoin, etc.) without requiring expensive on-chain transactions for every operation. It uses Hyperledger Fabric as an internal ledger to track fractional ownership while maintaining the security and transparency of blockchain technology.
 
+## Plain speak
+
+Less techy description:
+
+If you want to collect fees from UTXO transfers when facilitating point-to-point transfers, use Fractalegder. If you want to pay your employees with bitcoin, litecoin, or other UTXO-based coins.. Fractalegder. If you want to set up a bitcoin community and have intra-community transfers without the high bitcoin fees or long completion times (yes, Fractalegder). Fractaledger is a modularized system that allows you to plug it into a project of your own and interact with it via an API. 
+
+You supply a primary on-chain wallet (and secret for transaction signing) and the node infrastructure. You can then connect the Fractalegder transceiver to your on-chain system (full node, SPV, API, whatever). This allows interaction between the primary on-chain wallet(s) and the blockchain. For each primary on-chain wallet, you can create a network of internal wallets (made with hyperledger fabric, smart contract capable). Internal wallets can be assigned to all community members (employees, receivers of funds, whatever you can think of). You have to create the ecosystem around that (front end internal wallets for the users, backend interaction with Fractalegder, etc.) based on your own unique implementations, ideas or business. 
+
+The internal wallets can interact with each other, transferring funds between each other. And when a user wishes to withdraw funds from the internal wallet to their own on-chain wallet, they initiate the request. The request passes through the primary on-chain wallet and funds are sent from that primary on-chain wallet to the receiving address. If funds are sent from an external source directed to an internal wallet, that logic is on you to implement. You would track your primary on-chain wallet for the specific transaction and map to the destination (the internal wallet) yourself. Then use the API or direct code (could be handled with the smart contract alone) of Fractalegder to "fund" that internal wallet. 
+
+NOTE: The actual on-chain funds go to the primary on-chain wallet. The funding of the internal wallets is representative of that wallet's claim to some given amount relative to the primary on-chain wallet. The amount those internal wallets have or receive is managed by you (employee payroll, primary wallet as simply a passthrough to community internal wallets, etc.). 
+
+Fractaledger has a robust tracking system to ensure that the primary on-chain wallet does not have fewer funds than the aggregate sum of the internal wallets. However, Fractalegder does not control the primary on-chain wallet. You do. So, if you remove excessive funds from that primary on-chain wallet, you will get errors and warnings. You are responsible for reconciling the disparity. 
+
+Fractaledger creates a special base internal wallet with each primary on-chain wallet that tracks the excess funds in the primary on-chain wallet. If you have 1 BTC in the primary on-chain wallet. And two internal wallets each with .25 BTC. Those two internal wallets have an aggregate sum of .5 BTC. The base internal wallet will show a balance of .5 BTC as well (the difference between the total sum of the internal wallets and the primary on-chain wallet). This base wallet helps prevent users from overdrawing from the primary on-chain wallet. So for admins, you can allow access to that base internal wallet to make withdraws against it instead of the primary on-chain wallet itself. This reduces the risk of taking too much money out of the primary on-chain wallet because the base internal wallet is withdraw-only (you cannot transfer to other internal wallets from this base internal wallet) and is limited to the excess funds. You cannot withdraw from it more than the excess. This leaves the amount available, always at least equal, to the sum of the internal wallets.
+
+Export and modify the transceiver (Fractalegder to blockchain node interaction). Export and modify the smart contract(s) for the internal wallets; it can behave in any way you can think to use it. Eport and modify the API; make your own endpoints to handle logic that Fractalegder doesn't natively handle. Make it your own.
+
+Avoid excessive on-chain transfer fees, congestion and wait times. Make bitcoin smart contract capable within your own ecosystem then return to on-chain whenever you want to move funds outside of your ecosystem. Combine Fractaleger with lightning network to reduce costs even more. This is a way to sidestep the limitations of bitcoin and other UTXO blockchains.
+
 ### Key Features
 
 - **Bring Your Own Wallet**: Users provide their own UTXO-based wallet addresses and private keys
