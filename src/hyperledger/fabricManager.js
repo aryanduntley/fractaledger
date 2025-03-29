@@ -7,11 +7,12 @@
  * and chaincode management.
  */
 
-const { Wallets, Gateway } = require('fabric-network');
-const FabricCAServices = require('fabric-ca-client');
+const { connect, Identity, Signer, signers } = require('@hyperledger/fabric-gateway');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const winston = require('winston');
+const grpc = require('@grpc/grpc-js');
 
 // Configure logger
 const logger = winston.createLogger({
@@ -47,84 +48,52 @@ async function initializeHyperledger(config) {
     }
     
     const { 
-      connectionProfilePath, 
+      peerEndpoint,
+      tlsCertPath,
       channelName, 
       chaincodeName, 
       mspId, 
-      walletPath,
-      caUrl,
-      caName,
-      adminUserId,
-      adminUserSecret,
-      userId
+      keyDirectoryPath,
+      certPath,
+      clientTlsCertPath,
+      clientTlsKeyPath,
+      asLocalhost
     } = config.hyperledger;
     
-    // Create or get the wallet path
-    const walletDirectory = walletPath || path.join(process.cwd(), 'wallet');
-    if (!fs.existsSync(walletDirectory)) {
-      fs.mkdirSync(walletDirectory, { recursive: true });
-    }
+    // The gRPC client connection should be shared by all Gateway connections to this endpoint
+    const client = await newGrpcConnection(
+      peerEndpoint,
+      tlsCertPath,
+      clientTlsCertPath,
+      clientTlsKeyPath
+    );
     
-    // Create a new wallet for identity management
-    const wallet = await Wallets.newFileSystemWallet(walletDirectory);
-    logger.info(`Wallet path: ${walletDirectory}`);
-    
-    // Check if admin identity exists in the wallet
-    const adminIdentity = await wallet.get(adminUserId || 'admin');
-    if (!adminIdentity) {
-      logger.info('Admin identity not found in wallet, enrolling admin...');
-      
-      // Create a CA client for interacting with the CA
-      const caClient = buildCAClient(caUrl, caName);
-      
-      // Enroll the admin user
-      await enrollAdmin(
-        caClient, 
-        wallet, 
-        mspId, 
-        adminUserId || 'admin', 
-        adminUserSecret || 'adminpw'
-      );
-      
-      logger.info('Admin enrolled successfully');
-    }
-    
-    // Check if user identity exists in the wallet
-    const userIdentity = await wallet.get(userId || 'appUser');
-    if (!userIdentity) {
-      logger.info('User identity not found in wallet, registering and enrolling user...');
-      
-      // Create a CA client for interacting with the CA
-      const caClient = buildCAClient(caUrl, caName);
-      
-      // Register and enroll the user
-      await registerAndEnrollUser(
-        caClient, 
-        wallet, 
-        mspId, 
-        adminUserId || 'admin', 
-        userId || 'appUser'
-      );
-      
-      logger.info('User enrolled successfully');
-    }
-    
-    // Load the connection profile
-    let connectionProfile;
-    try {
-      const connectionProfileJson = fs.readFileSync(connectionProfilePath, 'utf8');
-      connectionProfile = JSON.parse(connectionProfileJson);
-    } catch (error) {
-      throw new Error(`Failed to load connection profile: ${error.message}`);
-    }
+    // Get identity and signer
+    const identity = await newIdentity(certPath, mspId);
+    const signer = await newSigner(keyDirectoryPath);
     
     // Create a new gateway for connecting to the peer node
-    const gateway = new Gateway();
+    const gateway = connect({
+      client,
+      identity,
+      signer,
+      evaluateOptions: () => {
+        return { deadline: Date.now() + 5000 }; // 5 seconds
+      },
+      endorseOptions: () => {
+        return { deadline: Date.now() + 15000 }; // 15 seconds
+      },
+      submitOptions: () => {
+        return { deadline: Date.now() + 5000 }; // 5 seconds
+      },
+      commitStatusOptions: () => {
+        return { deadline: Date.now() + 60000 }; // 1 minute
+      },
+    });
     
     // Create the fabric client
     const fabricClient = {
       gateway,
-      wallet,
       network: null,
       contract: null,
       
@@ -136,15 +105,8 @@ async function initializeHyperledger(config) {
         try {
           logger.info('Connecting to Hyperledger Fabric network...');
           
-          // Connect to the gateway using the identity in the wallet
-          await gateway.connect(connectionProfile, {
-            wallet,
-            identity: userId || 'appUser',
-            discovery: { enabled: true, asLocalhost: true }
-          });
-          
           // Get the network and contract
-          const network = await gateway.getNetwork(channelName);
+          const network = gateway.getNetwork(channelName);
           const contract = network.getContract(chaincodeName);
           
           fabricClient.network = network;
@@ -171,7 +133,11 @@ async function initializeHyperledger(config) {
             await fabricClient.connect();
           }
           
-          const result = await fabricClient.contract.submitTransaction(chaincodeFunction, ...args);
+          // Convert string arguments to Uint8Array
+          const uint8Args = args.map(arg => Buffer.from(arg));
+          
+          // Submit transaction
+          const result = await fabricClient.contract.submitTransaction(chaincodeFunction, ...uint8Args);
           logger.info(`Transaction ${chaincodeFunction} has been submitted`);
           
           return result;
@@ -195,7 +161,11 @@ async function initializeHyperledger(config) {
             await fabricClient.connect();
           }
           
-          const result = await fabricClient.contract.evaluateTransaction(chaincodeFunction, ...args);
+          // Convert string arguments to Uint8Array
+          const uint8Args = args.map(arg => Buffer.from(arg));
+          
+          // Evaluate transaction
+          const result = await fabricClient.contract.evaluateTransaction(chaincodeFunction, ...uint8Args);
           logger.info(`Transaction ${chaincodeFunction} has been evaluated`);
           
           return result;
@@ -216,7 +186,7 @@ async function initializeHyperledger(config) {
         try {
           logger.info(`Deploying chaincode from ${chaincodePath}`);
           
-          // In a production implementation, this would use the Fabric SDK to deploy
+          // In a production implementation, this would use the Fabric CLI tools to deploy
           // the chaincode to the Fabric network. This requires administrative access
           // to the Fabric network and is typically done using the Fabric CLI tools.
           
@@ -240,7 +210,7 @@ async function initializeHyperledger(config) {
         try {
           logger.info(`Updating chaincode from ${chaincodePath}`);
           
-          // In a production implementation, this would use the Fabric SDK to update
+          // In a production implementation, this would use the Fabric CLI tools to update
           // the chaincode on the Fabric network. This requires administrative access
           // to the Fabric network and is typically done using the Fabric CLI tools.
           
@@ -271,24 +241,29 @@ async function initializeHyperledger(config) {
               reject(new Error(`Transaction event listener for ${transactionId} timed out`));
             }, 60000); // 60 seconds timeout
             
-            fabricClient.network.addBlockListener(async (event) => {
-              const block = event.blockData;
-              
-              // Check if the block contains the transaction
-              for (const tx of block.data.data) {
-                const txId = tx.payload.header.channel_header.tx_id;
-                
-                if (txId === transactionId) {
-                  clearTimeout(timeout);
-                  resolve({
-                    transactionId,
-                    blockNumber: block.header.number,
-                    timestamp: new Date(tx.payload.header.channel_header.timestamp)
-                  });
-                  return;
+            // Use the checkpointer to listen for transaction events
+            const checkpointer = fabricClient.network.newCheckpointer();
+            const blockEvents = fabricClient.network.getBlockEvents(checkpointer);
+            
+            (async () => {
+              try {
+                for await (const blockEvent of blockEvents) {
+                  for (const transactionEvent of blockEvent.getTransactionEvents()) {
+                    if (transactionEvent.getTransactionId() === transactionId) {
+                      clearTimeout(timeout);
+                      resolve({
+                        transactionId,
+                        blockNumber: blockEvent.getBlockNumber(),
+                        timestamp: new Date()
+                      });
+                      return;
+                    }
+                  }
                 }
+              } catch (error) {
+                reject(error);
               }
-            });
+            })();
           });
         } catch (error) {
           logger.error(`Failed to register transaction event listener: ${error.message}`);
@@ -305,7 +280,11 @@ async function initializeHyperledger(config) {
           logger.info('Disconnecting from Hyperledger Fabric');
           
           if (gateway) {
-            gateway.disconnect();
+            gateway.close();
+          }
+          
+          if (client) {
+            client.close();
           }
           
           fabricClient.network = null;
@@ -327,124 +306,79 @@ async function initializeHyperledger(config) {
 }
 
 /**
- * Build a CA client for interacting with the CA
- * @param {string} caUrl The URL of the CA
- * @param {string} caName The name of the CA
- * @returns {Object} The CA client
+ * Create a new gRPC connection to the Fabric peer
+ * @param {string} peerEndpoint The endpoint of the peer
+ * @param {string} tlsCertPath The path to the TLS certificate
+ * @param {string} clientTlsCertPath The path to the client TLS certificate
+ * @param {string} clientTlsKeyPath The path to the client TLS key
+ * @returns {grpc.Client} The gRPC client
  */
-function buildCAClient(caUrl, caName) {
+async function newGrpcConnection(peerEndpoint, tlsCertPath, clientTlsCertPath, clientTlsKeyPath) {
   try {
-    // Create a new CA client for interacting with the CA
-    const caClient = new FabricCAServices(caUrl, { trustedRoots: [], verify: false }, caName);
-    logger.info(`Built a CA client named ${caName}`);
-    return caClient;
+    logger.info(`Creating gRPC connection to ${peerEndpoint}`);
+    
+    const tlsRootCert = fs.readFileSync(tlsCertPath);
+    const tlsCredentials = grpc.credentials.createSsl(tlsRootCert);
+    
+    // If client TLS certificate and key are provided, use mutual TLS
+    let credentials = tlsCredentials;
+    if (clientTlsCertPath && clientTlsKeyPath) {
+      const clientTlsCert = fs.readFileSync(clientTlsCertPath);
+      const clientTlsKey = fs.readFileSync(clientTlsKeyPath);
+      credentials = grpc.credentials.createSsl(tlsRootCert, clientTlsKey, clientTlsCert);
+    }
+    
+    const client = new grpc.Client(peerEndpoint, credentials);
+    
+    logger.info(`Created gRPC connection to ${peerEndpoint}`);
+    return client;
   } catch (error) {
-    logger.error(`Failed to build CA client: ${error.message}`);
-    throw new Error(`Failed to build CA client: ${error.message}`);
+    logger.error(`Failed to create gRPC connection: ${error.message}`);
+    throw new Error(`Failed to create gRPC connection: ${error.message}`);
   }
 }
 
 /**
- * Enroll an admin user
- * @param {Object} caClient The Fabric CA client
- * @param {Object} wallet The wallet to store the admin credentials
- * @param {string} orgMspId The MSP ID of the organization
- * @param {string} adminUserId The ID of the admin user
- * @param {string} adminUserSecret The secret of the admin user
- * @returns {Promise<void>}
+ * Create a new identity for use with the Fabric Gateway
+ * @param {string} certPath The path to the certificate
+ * @param {string} mspId The MSP ID
+ * @returns {Identity} The identity
  */
-async function enrollAdmin(caClient, wallet, orgMspId, adminUserId, adminUserSecret) {
+async function newIdentity(certPath, mspId) {
   try {
-    // Check if admin is already enrolled
-    const identity = await wallet.get(adminUserId);
-    if (identity) {
-      logger.info(`Admin ${adminUserId} is already enrolled`);
-      return;
-    }
+    logger.info(`Creating identity with MSP ID ${mspId}`);
     
-    // Enroll the admin user
-    const enrollment = await caClient.enroll({
-      enrollmentID: adminUserId,
-      enrollmentSecret: adminUserSecret
-    });
+    const credentials = fs.readFileSync(certPath);
+    const identity = { mspId, credentials };
     
-    // Create the identity for the admin user
-    const x509Identity = {
-      credentials: {
-        certificate: enrollment.certificate,
-        privateKey: enrollment.key.toBytes()
-      },
-      mspId: orgMspId,
-      type: 'X.509'
-    };
-    
-    // Import the identity into the wallet
-    await wallet.put(adminUserId, x509Identity);
-    logger.info(`Admin ${adminUserId} enrolled successfully`);
+    logger.info(`Created identity with MSP ID ${mspId}`);
+    return identity;
   } catch (error) {
-    logger.error(`Failed to enroll admin: ${error.message}`);
-    throw new Error(`Failed to enroll admin: ${error.message}`);
+    logger.error(`Failed to create identity: ${error.message}`);
+    throw new Error(`Failed to create identity: ${error.message}`);
   }
 }
 
 /**
- * Register and enroll a user
- * @param {Object} caClient The Fabric CA client
- * @param {Object} wallet The wallet to store the user credentials
- * @param {string} orgMspId The MSP ID of the organization
- * @param {string} adminUserId The ID of the admin user
- * @param {string} userId The ID of the user to register
- * @returns {Promise<void>}
+ * Create a new signer for use with the Fabric Gateway
+ * @param {string} keyDirectoryPath The path to the key directory
+ * @returns {Signer} The signer
  */
-async function registerAndEnrollUser(caClient, wallet, orgMspId, adminUserId, userId) {
+async function newSigner(keyDirectoryPath) {
   try {
-    // Check if user is already enrolled
-    const userIdentity = await wallet.get(userId);
-    if (userIdentity) {
-      logger.info(`User ${userId} is already enrolled`);
-      return;
-    }
+    logger.info(`Creating signer from ${keyDirectoryPath}`);
     
-    // Get the admin identity
-    const adminIdentity = await wallet.get(adminUserId);
-    if (!adminIdentity) {
-      throw new Error(`Admin ${adminUserId} must be enrolled before registering users`);
-    }
+    const files = fs.readdirSync(keyDirectoryPath);
+    const keyPath = path.resolve(keyDirectoryPath, files[0]);
+    const privateKeyPem = fs.readFileSync(keyPath);
+    const privateKey = crypto.createPrivateKey(privateKeyPem);
+    const signer = signers.newPrivateKeySigner(privateKey);
     
-    // Create a provider for the admin identity
-    const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
-    const adminUser = await provider.getUserContext(adminIdentity, adminUserId);
-    
-    // Register the user
-    const secret = await caClient.register({
-      affiliation: 'org1.department1',
-      enrollmentID: userId,
-      role: 'client',
-      attrs: [{ name: 'role', value: 'user', ecert: true }]
-    }, adminUser);
-    
-    // Enroll the user
-    const enrollment = await caClient.enroll({
-      enrollmentID: userId,
-      enrollmentSecret: secret
-    });
-    
-    // Create the identity for the user
-    const x509Identity = {
-      credentials: {
-        certificate: enrollment.certificate,
-        privateKey: enrollment.key.toBytes()
-      },
-      mspId: orgMspId,
-      type: 'X.509'
-    };
-    
-    // Import the identity into the wallet
-    await wallet.put(userId, x509Identity);
-    logger.info(`User ${userId} enrolled successfully`);
+    logger.info(`Created signer from ${keyDirectoryPath}`);
+    return signer;
   } catch (error) {
-    logger.error(`Failed to register and enroll user: ${error.message}`);
-    throw new Error(`Failed to register and enroll user: ${error.message}`);
+    logger.error(`Failed to create signer: ${error.message}`);
+    throw new Error(`Failed to create signer: ${error.message}`);
   }
 }
 

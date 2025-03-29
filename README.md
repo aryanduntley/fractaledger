@@ -743,6 +743,17 @@ const result = await connector.sendTransaction('bc1q...', 0.1, sendOptions as an
 
 For more detailed information about TypeScript support, see [PackageExportsImplementation.md](PackageExportsImplementation.md).
 
+## Security Updates
+
+FractaLedger is regularly updated to address security vulnerabilities. Version 1.0.5 includes important security fixes for:
+
+- jsrsasign vulnerability (Marvin Attack of RSA and RSAOAEP decryption)
+- axios vulnerability (SSRF and Credential Leakage via Absolute URL)
+- Babel vulnerabilities (inefficient RegExp complexity)
+- Vite vulnerability (server.fs.deny bypass)
+
+For detailed information about security updates, see [SECURITY_UPDATES.md](SECURITY_UPDATES.md).
+
 ## Documentation
 
 FractaLedger provides comprehensive documentation across various files. Here's a complete list of documentation files available in the project:
@@ -752,6 +763,7 @@ FractaLedger provides comprehensive documentation across various files. Here's a
 - [API.md](API.md) - API documentation
 - [STRUCTURE.md](STRUCTURE.md) - Project structure documentation
 - [PackageExportsImplementation.md](PackageExportsImplementation.md) - Exports and typescript documentation
+- [SECURITY_UPDATES.md](SECURITY_UPDATES.md) - Security updates documentation
 
 ### Component Documentation
 - [docs/BaseInternalWallet.md](docs/BaseInternalWallet.md) - Base internal wallet documentation

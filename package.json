@@ -1,6 +1,6 @@
 {
   "name": "fractaledger",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A configurable off-chain UTXO management system that enables fractional ownership, secure fund distribution, and seamless on-chain interactions across multiple blockchains.",
   "keywords": [
     "blockchain",
@@ -71,7 +71,9 @@
   "files": [
     "dist",
     "LICENSE",
-    "README.md"
+    "README.md",
+    ".peerDependencyResolution.json",
+    "SECURITY_UPDATES.md"
   ],
   "scripts": {
     "start": "node src/index.js",
@@ -88,15 +90,14 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.10.1",
+    "@hyperledger/fabric-gateway": "^1.7.1",
     "axios": "^1.8.4",
     "bitcoinjs-lib": "^6.1.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "fabric-ca-client": "^2.2.20",
-    "fabric-common": "^2.2.20",
     "fabric-contract-api": "^2.5.8",
-    "fabric-network": "^2.2.20",
     "joi": "^17.12.2",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",

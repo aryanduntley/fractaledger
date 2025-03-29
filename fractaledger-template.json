@@ -75,31 +75,21 @@
     }
   ],
   "hyperledger": {
-    "connectionProfilePath": "./connection-profile.json",
     "channelName": "fractaledger-channel",
     "chaincodeName": "fractaledger-chaincode",
     "mspId": "Org1MSP",
-    "walletPath": "./wallet",
-    "caUrl": "https://localhost:7054",
-    "caName": "ca.org1.example.com",
-    "adminUserId": "admin",
-    "adminUserSecret": "adminpw",
-    "userId": "user1",
-    "tlsEnabled": true,
-    "tlsCertPath": "./tls-cert.pem",
     "peerEndpoint": "localhost:7051",
-    "peerHostname": "peer0.org1.example.com",
-    "ordererEndpoint": "localhost:7050",
-    "ordererHostname": "orderer.example.com",
-    "ordererTlsCertPath": "./orderer-tls-cert.pem",
-    "discovery": {
-      "enabled": true,
-      "asLocalhost": true
-    },
-    "eventHandling": {
-      "commitTimeout": 300,
-      "endorsementTimeout": 30,
-      "blockEventListenerEnabled": true
+    "tlsCertPath": "./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt",
+    "certPath": "./crypto-config/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/User1@org1.example.com-cert.pem",
+    "keyDirectoryPath": "./crypto-config/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore",
+    "clientTlsCertPath": "./crypto-config/peerOrganizations/org1.example.com/users/User1@org1.example.com/tls/client.crt",
+    "clientTlsKeyPath": "./crypto-config/peerOrganizations/org1.example.com/users/User1@org1.example.com/tls/client.key",
+    "asLocalhost": true,
+    "timeouts": {
+      "evaluate": 5000,
+      "endorse": 15000,
+      "submit": 5000,
+      "commitStatus": 60000
     }
   },
   "api": {
