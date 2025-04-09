@@ -1,6 +1,6 @@
 {
   "name": "fractaledger",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A configurable off-chain UTXO management system that enables fractional ownership, secure fund distribution, and seamless on-chain interactions across multiple blockchains.",
   "keywords": [
     "blockchain",
