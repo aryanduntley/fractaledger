@@ -42,15 +42,20 @@ Before setting up Hyperledger Fabric for FractaLedger, ensure you have the follo
 
 ### 1. Download Fabric Binaries and Docker Images
 
-FractaLedger requires Hyperledger Fabric version 2.2.x. Use the following commands to download the necessary binaries and Docker images:
+FractaLedger requires Hyperledger Fabric version 3.1 or higher. Use the following commands to download the necessary binaries and Docker images:
 
 ```bash
 # Create a directory for Fabric binaries
-mkdir -p ~/fabric-samples
-cd ~/fabric-samples
+mkdir -p ~/hyperledger
+cd ~/hyperledger
 
-# Download Fabric binaries and Docker images
-curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.2.0 1.4.9
+# Download the install script
+curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh && chmod +x install-fabric.sh
+
+# Install Fabric binaries, Docker images, and samples (latest version 3.1)
+./install-fabric.sh docker binary samples
+
+# Note: The install script creates a fabric-samples directory in the current directory
 ```
 
 This script downloads:
@@ -80,14 +85,71 @@ You should see several Hyperledger Fabric images, including:
 Add the Fabric binaries to your PATH:
 
 ```bash
-export PATH=$PATH:~/fabric-samples/bin
+export PATH=$PATH:~/hyperledger/fabric-samples/bin
 ```
 
 To make this change permanent, add it to your shell profile file (e.g., ~/.bashrc, ~/.zshrc):
 
 ```bash
-echo 'export PATH=$PATH:~/fabric-samples/bin' >> ~/.bashrc
+echo 'export PATH=$PATH:~/hyperledger/fabric-samples/bin' >> ~/.bashrc
 source ~/.bashrc
+```
+
+If you're using a different shell, use the appropriate profile file:
+
+```bash
+# For bash (default on most systems)
+echo 'export PATH=$PATH:~/hyperledger/fabric-samples/bin' >> ~/.bashrc
+source ~/.bashrc
+
+# For zsh
+echo 'export PATH=$PATH:~/hyperledger/fabric-samples/bin' >> ~/.zshrc
+source ~/.zshrc
+
+# For profile (used by many login shells)
+echo 'export PATH=$PATH:~/hyperledger/fabric-samples/bin' >> ~/.profile
+source ~/.profile
+```
+
+You can also use the absolute path with $HOME to avoid any issues with the tilde (~) expansion:
+
+```bash
+echo 'export PATH=$PATH:$HOME/hyperledger/fabric-samples/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### 4. Verify Binaries Installation
+
+Check that the Fabric binaries are installed and accessible:
+
+```bash
+# Verify peer binary
+peer version
+
+# If you see "Command 'peer' not found", try these troubleshooting steps:
+
+# 1. Check if the binaries were installed:
+ls -la ~/hyperledger/fabric-samples/bin
+
+# 2. Check if the PATH includes the bin directory
+echo $PATH | grep fabric-samples
+
+# 3. If not, try adding the full path to the command
+~/hyperledger/fabric-samples/bin/peer version
+
+# 4. Or use the absolute path with $HOME
+export PATH=$PATH:$HOME/hyperledger/fabric-samples/bin
+source ~/.bashrc
+
+# 5. Try logging out and logging back in, as some PATH changes only take effect on new login sessions
+
+# 6. If the bin directory is empty or doesn't exist, run the install script with explicit version:
+cd ~/hyperledger
+./install-fabric.sh --fabric-version 3.1 docker binary samples
+
+# 7. Alternatively, you can download the binaries directly:
+cd ~/hyperledger/fabric-samples
+curl -sSL https://github.com/hyperledger/fabric/releases/download/v3.1.0/hyperledger-fabric-linux-amd64-3.1.0.tar.gz | tar xz
 ```
 
 ## Setting Up a Fabric Network for FractaLedger
@@ -98,7 +160,7 @@ FractaLedger requires a running Hyperledger Fabric network. You can either use t
 
 ```bash
 # Navigate to the test-network directory
-cd ~/fabric-samples/test-network
+cd ~/hyperledger/fabric-samples/test-network
 
 # Start the network with CouchDB as the state database
 ./network.sh up createChannel -c fractaledger -s couchdb
@@ -122,7 +184,7 @@ Copy the crypto material from your Fabric network to the FractaLedger project:
 ```bash
 # For the test network
 mkdir -p /path/to/your/project/crypto-config
-cp -r ~/fabric-samples/test-network/organizations/* /path/to/your/project/crypto-config/
+cp -r ~/hyperledger/fabric-samples/test-network/organizations/* /path/to/your/project/crypto-config/
 ```
 
 ### 2. Create Connection Profile

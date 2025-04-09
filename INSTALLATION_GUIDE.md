@@ -197,18 +197,47 @@ Now that you have all the prerequisites installed, you can download the Hyperled
 
 ```bash
 # Create a directory for Fabric
-mkdir -p ~/fabric-samples
-cd ~/fabric-samples
+mkdir -p ~/hyperledger
+cd ~/hyperledger
 
-# Download Fabric binaries and Docker images
-curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.2.0 1.4.9
+# Download the install script
+curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh && chmod +x install-fabric.sh
 
-# Add Fabric binaries to PATH
-echo 'export PATH=$PATH:~/fabric-samples/bin' >> ~/.profile
+# Install Fabric binaries, Docker images, and samples (latest version 3.1)
+./install-fabric.sh docker binary samples
+
+# Note: The install script creates a fabric-samples directory in the current directory
+# Add Fabric binaries to PATH (note the nested fabric-samples directory)
+echo 'export PATH=$PATH:~/hyperledger/fabric-samples/bin' >> ~/.profile
 source ~/.profile
 
 # Verify installation
 peer version
+
+# If the peer command is not found even though the binaries are installed, try:
+# 1. Check if the PATH includes the bin directory
+echo $PATH | grep fabric-samples
+
+# 2. If not, try adding the full path to the command
+~/hyperledger/fabric-samples/bin/peer version
+
+# 3. Or use the absolute path to the peer binary
+export PATH=$PATH:$HOME/hyperledger/fabric-samples/bin
+source ~/.bashrc
+
+# If you see "Command 'peer' not found", check if the binaries were installed:
+ls -la ~/hyperledger/fabric-samples/bin
+
+# If the bin directory is empty or doesn't exist, check if the script created a nested directory:
+ls -la ~/hyperledger
+ls -la ~/hyperledger/fabric-samples
+
+# Run the install script with explicit version if needed:
+./install-fabric.sh --fabric-version 3.1 docker binary samples
+
+# Alternatively, you can download the binaries directly:
+cd ~/hyperledger/fabric-samples
+curl -sSL https://github.com/hyperledger/fabric/releases/download/v3.1.0/hyperledger-fabric-linux-amd64-3.1.0.tar.gz | tar xz
 ```
 
 ## Step 6: Install FractaLedger
