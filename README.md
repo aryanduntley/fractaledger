@@ -148,7 +148,13 @@ FractaLedger requires Hyperledger Fabric as its internal ledger. While the appli
    - Update the `hyperledger` section in `config.json` with your network details
    - Set the appropriate environment variables in `.env`
 
-For detailed Fabric setup instructions, refer to the [Hyperledger Fabric documentation](https://hyperledger-fabric.readthedocs.io/).
+For detailed Hyperledger Fabric setup instructions, including installation requirements, data storage locations, and backup strategies, refer to our [Hyperledger Fabric Setup Guide](HYPERLEDGER_FABRIC_SETUP.md).
+
+For step-by-step installation instructions for all required components, refer to our [Installation Guide](INSTALLATION_GUIDE.md).
+
+For comprehensive backup procedures and best practices, refer to our [Backup Guide](BACKUP_GUIDE.md).
+
+For general Fabric documentation, refer to the [Hyperledger Fabric documentation](https://hyperledger-fabric.readthedocs.io/).
 
 ## Configuration
 
