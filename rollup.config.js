@@ -33,12 +33,18 @@ export default {
     'fabric-common',
     'fabric-contract-api',
     'fabric-network',
+    '@hyperledger/fabric-gateway',
     'joi',
     'path',
     'fs',
     'crypto',
     'events',
-    'axios'
+    'axios',
+    'pkcs11js',
+    'electrum-client',
+    '@grpc/grpc-js',
+    'protobufjs',
+    '@protobufjs/inquire'
   ],
   plugins: [
     resolve(),
